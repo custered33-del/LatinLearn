@@ -7,3 +7,5 @@ tts/
 .DS_Store
 Play LatinLearn.html
 .claude/
+firebase-debug.log
+.firebase/

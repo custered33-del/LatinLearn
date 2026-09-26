@@ -8,7 +8,7 @@ import { useEffect, useReducer } from 'preact/hooks';
 import { getProgress, mergeProgress, replaceProgress, sanitize, subscribeProgress, type Progress } from './progress';
 
 /** Firebase Realtime Database URL; cloud save is hidden until this is set. */
-export const CLOUD_URL = '';
+export const CLOUD_URL: string = 'https://latinlearn-custered33-default-rtdb.europe-west1.firebasedatabase.app';
 export const cloudEnabled = CLOUD_URL !== '';
 
 const CODE_KEY = 'latinlearn:cloud-code';

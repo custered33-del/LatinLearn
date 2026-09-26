@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "saves": {
+      "$code": {
+        ".read": "$code.matches(/^[0-9]{10}$/)",
+        ".write": "$code.matches(/^[0-9]{10}$/)",
+        ".validate": "newData.child('app').val() === 'LatinLearn' && newData.child('progress').exists()"
+      }
+    }
+  }
+}
