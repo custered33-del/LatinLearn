@@ -6,6 +6,7 @@ import { loadCourses } from './data/courses';
 import { LANG_ID, applyLanguage } from './lang';
 import { loadVoice } from './lib/speech';
 import './lib/cloud';
+import './lib/family';
 
 applyLanguage();
 void loadCourses(LANG_ID).then(() => render(<App />, document.getElementById('app')!));

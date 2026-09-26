@@ -6,6 +6,25 @@
         ".write": "$code.matches(/^[0-9]{10}$/)",
         ".validate": "newData.child('app').val() === 'LatinLearn' && newData.child('progress').exists()"
       }
+    },
+    "families": {
+      "$family": {
+        ".read": "$family.matches(/^[0-9]{7}$/)",
+        "members": {
+          "$member": {
+            ".write": "$family.matches(/^[0-9]{7}$/) && $member.matches(/^[a-z0-9]{12}$/)",
+            ".validate": "!newData.exists() || (newData.child('name').isString() && newData.child('name').val().length <= 20 && newData.child('xp').isNumber())"
+          }
+        },
+        "days": {
+          "$day": {
+            "$member": {
+              ".write": "$family.matches(/^[0-9]{7}$/) && $day.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) && $member.matches(/^[a-z0-9]{12}$/)",
+              ".validate": "newData.isNumber()"
+            }
+          }
+        }
+      }
     }
   }
 }

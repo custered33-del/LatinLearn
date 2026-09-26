@@ -1,8 +1,9 @@
 import { L, LANG } from '../lang';
-import { useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { COURSES } from '../data/courses';
 import { cloudEnabled, createCode, formatCode, logIn, logOut, syncNow, useCloud } from '../lib/cloud';
 import { Icon } from '../components/Icon';
+import { createFamily, familyStreak, formatFamilyCode, joinFamily, leaveFamily, refreshFamily, useFamily } from '../lib/family';
 import { LanguagePicker } from '../components/Layout';
 import { cx, useTitle } from '../lib/hooks';
 import { MASTERED } from '../lib/mastery';
@@ -342,12 +343,186 @@ export function Settings() {
       </header>
       <div class="settings-grid">
         <CloudSection />
+        <FamilySection />
         <VoiceSection />
         <SaveSection />
         <OfflineSection />
       </div>
       <SwitchLanguage />
     </div>
+  );
+}
+
+const NAME_KEY = 'latinlearn:family-name';
+
+function FamilySection() {
+  const { mine, data } = useFamily();
+  const [name, setName] = useState(() => {
+    try {
+      return localStorage.getItem(NAME_KEY) ?? '';
+    } catch {
+      return '';
+    }
+  });
+  const [input, setInput] = useState('');
+  const [showCode, setShowCode] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (mine) void refreshFamily().catch(() => setMsg({ ok: false, text: 'Couldn’t reach your family. Check your internet.' }));
+  }, [mine?.code]);
+
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      await fn();
+    } catch {
+      setMsg({ ok: false, text: 'Couldn’t reach the cloud. Check your internet and try again.' });
+    }
+    setBusy(false);
+  };
+  const cleanName = name.trim().slice(0, 20);
+  const needName = () => {
+    if (cleanName) {
+      try {
+        localStorage.setItem(NAME_KEY, cleanName);
+      } catch {
+        /* ignore */
+      }
+      return false;
+    }
+    setMsg({ ok: false, text: 'Type your name first so your family knows who you are.' });
+    return true;
+  };
+
+  const members = data ? Object.entries(data.members).sort((a, b) => b[1].xp - a[1].xp) : [];
+  const doneToday = data ? Object.keys(data.days[dayKey()] ?? {}) : [];
+  const totalXp = members.reduce((n, [, m]) => n + m.xp, 0);
+  const totalWords = members.reduce((n, [, m]) => n + m.words, 0);
+  const goal = Math.max(1000, Math.ceil((totalXp + 1) / 1000) * 1000);
+  const streak = data ? familyStreak(data) : 0;
+
+  return (
+    <section class="panel settings-block family" aria-labelledby="family-h">
+      <h2 id="family-h" class="h-sm">
+        <Icon name="flame" size={18} /> Family
+      </h2>
+      {!mine ? (
+        <>
+          <p class="muted">
+            Learn together! Make a family, then share its 7-digit code. You’ll share a family streak and goals. Only names and scores are
+            shared, never login codes.
+          </p>
+          <input
+            class="family-name"
+            value={name}
+            maxLength={20}
+            onInput={(e) => setName(e.currentTarget.value)}
+            placeholder="Your name"
+            aria-label="Your name"
+          />
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary" disabled={busy} onClick={() => !needName() && void run(() => createFamily(cleanName))}>
+              <Icon name="sparkle" size={18} /> Create a family
+            </button>
+          </div>
+          <form
+            class="cloud-login"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (needName()) return;
+              void run(async () => {
+                const r = await joinFamily(input, cleanName);
+                setMsg(r === 'ok' ? { ok: true, text: 'You’re in! Welcome to the family.' } : { ok: false, text: 'No family has that code. Check the 7 digits.' });
+              });
+            }}
+          >
+            <input
+              value={input}
+              onInput={(e) => setInput(e.currentTarget.value)}
+              inputMode="numeric"
+              maxLength={9}
+              placeholder="Family code: 123 4567"
+              aria-label="Family code"
+            />
+            <button type="submit" class="btn btn-ghost" disabled={busy || input.replace(/\D/g, '').length !== 7}>
+              Join
+            </button>
+          </form>
+        </>
+      ) : (
+        <>
+          {!data ? (
+            <p class="muted">Loading your family…</p>
+          ) : (
+            <>
+              <div class="family-stats">
+                <div>
+                  <b>🔥 {streak}</b>
+                  <span>family streak</span>
+                </div>
+                <div>
+                  <b>
+                    {doneToday.length}/{members.length}
+                  </b>
+                  <span>practised today</span>
+                </div>
+                <div>
+                  <b>{totalWords}</b>
+                  <span>words learned</span>
+                </div>
+              </div>
+              <div class="family-goal">
+                <div class="family-goal-top">
+                  <span>Family goal: {goal.toLocaleString()} XP</span>
+                  <span>{totalXp.toLocaleString()} XP</span>
+                </div>
+                <div class="family-bar">
+                  <span style={{ width: `${Math.min(100, (totalXp / goal) * 100)}%` }} />
+                </div>
+                {members.length > 1 && doneToday.length === members.length && <p class="muted small">Everyone practised today. Amazing teamwork! 🎉</p>}
+              </div>
+              <ul class="family-list">
+                {members.map(([id, m], i) => (
+                  <li key={id} class={cx(id === mine.id && 'me')}>
+                    <span class="family-rank">{i + 1}</span>
+                    <span class="family-who">
+                      {m.name}
+                      {id === mine.id && ' (you)'} <span aria-hidden="true">{m.langs}</span>
+                    </span>
+                    <span class="family-num" title="Streak">
+                      🔥 {m.streak}
+                    </span>
+                    <span class="family-num">{m.xp.toLocaleString()} XP</span>
+                    <span title={doneToday.includes(id) ? 'Practised today' : 'Not yet today'}>{doneToday.includes(id) ? '✅' : '⏳'}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          <div class="btn-row">
+            <button type="button" class="btn btn-ghost btn-sm" onClick={() => setShowCode(!showCode)}>
+              {showCode ? `Invite code: ${formatFamilyCode(mine.code)}` : 'Show invite code'}
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" disabled={busy} onClick={() => void run(refreshFamily)}>
+              <Icon name="refresh" size={14} /> Refresh
+            </button>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              onClick={() => {
+                if (confirm('Leave this family? Your own progress stays.')) void leaveFamily();
+              }}
+            >
+              Leave family
+            </button>
+          </div>
+        </>
+      )}
+      <div aria-live="polite">{msg && <p class={cx('save-msg', msg.ok ? 'good' : 'bad')}>{msg.text}</p>}</div>
+    </section>
   );
 }
 
