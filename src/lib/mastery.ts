@@ -1,6 +1,7 @@
 import { COURSES, STEPS } from '../data/courses';
 import type { Course, StepId } from '../data/types';
 import { MAX_STRENGTH, courseOf, type Progress } from './progress';
+import { LANG } from '../lang';
 
 export interface Level {
   min: number;
@@ -8,11 +9,12 @@ export interface Level {
   en: string;
 }
 
+/** Level names are in the language being learnt. */
 export const LEVELS: Level[] = [
-  { min: 0, la: 'Tīrō', en: 'Novice' },
-  { min: 25, la: 'Discipulus', en: 'Learner' },
-  { min: 50, la: 'Perītus', en: 'Skilled' },
-  { min: 80, la: 'Magister', en: 'Master' },
+  { min: 0, la: LANG.levels[0], en: 'Novice' },
+  { min: 25, la: LANG.levels[1], en: 'Learner' },
+  { min: 50, la: LANG.levels[2], en: 'Skilled' },
+  { min: 80, la: LANG.levels[3], en: 'Master' },
 ];
 
 export const levelFor = (mastery: number): Level => [...LEVELS].reverse().find((l) => mastery >= l.min) ?? LEVELS[0];

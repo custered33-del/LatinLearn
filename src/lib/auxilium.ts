@@ -6,10 +6,19 @@
  */
 import { COURSES, headOf } from '../data/courses';
 import { LEXICON, VERBS } from '../data/reference';
-import type { VocabItem } from '../data/types';
-import { checkTyped, fold, headword, levenshtein, respell } from './latin';
+import { loadRef } from '../data/ref';
+import type { LangRef, VocabItem } from '../data/types';
+import { LANG, LANG_ID } from '../lang';
+import { checkTyped, fold, headword, levenshtein } from './latin';
 import { toLatinWords, toRoman } from './numerals';
 import { actions, getProgress } from './progress';
+import { sayGuide } from './speech';
+
+const LATIN = LANG_ID === 'la';
+const LANGUAGE = LANG.language;
+/** Verb tables and number words for German, Spanish and French (Latin has its own). */
+let REF: LangRef | null = null;
+export const ready: Promise<unknown> = LATIN ? Promise.resolve() : loadRef(LANG_ID).then((r) => (REF = r));
 
 export interface Word {
   id?: string;
@@ -23,7 +32,7 @@ export interface Word {
 export const WORDS: Word[] = (() => {
   const out: Word[] = COURSES.flatMap((c) => c.vocab.map((v) => ({ id: v.id, head: headOf(v), la: v.la, en: v.en, ex: v.ex, from: c.title })));
   const seen = new Set(out.map((w) => fold(w.head)));
-  for (const [la, en, , cat] of LEXICON) {
+  if (LATIN) for (const [la, en, , cat] of LEXICON) {
     const head = headword(la);
     if (!seen.has(fold(head))) out.push({ head, la, en, from: `Lexicon · ${cat}` });
   }
@@ -86,13 +95,24 @@ export interface QuizQ {
   dir: 'to-latin' | 'to-english';
 }
 
-export const START_CHIPS = ['Quiz me', 'What does amīcus mean?', 'How do you say happy?', 'Conjugate amō', 'Say 2026 in Latin'];
+const EXAMPLES: Record<typeof LANG_ID, [string, string]> = {
+  la: ['amīcus', 'amō'],
+  de: ['Freund', 'sein'],
+  es: ['amigo', 'hablar'],
+  fr: ['ami', 'parler'],
+};
+export const START_CHIPS = ['Quiz me', `What does ${EXAMPLES[LANG_ID][0]} mean?`, 'How do you say happy?', `Conjugate ${EXAMPLES[LANG_ID][1]}`, `Say 2026 in ${LANGUAGE}`];
+
+const sayIt = (w: string) => {
+  const g = sayGuide(w);
+  return g ? ` Say it: **${g}**.` : '';
+};
 
 const describe = (w: Word): Reply => ({
   text:
     `_${w.head}_ means **${w.en}**.` +
     (w.la !== w.head ? ` Dictionary form: _${w.la}_.` : '') +
-    ` Say it: **${respell(w.head)}**.` +
+    sayIt(w.head) +
     (w.ex ? ` Example: _${w.ex[0]}_ (${w.ex[1]})` : '') +
     ` · from ${w.from}`,
   say: w.head,
@@ -111,7 +131,7 @@ export function nextQuestion(): QuizQ {
 
 export const askQuestion = (q: QuizQ): Reply =>
   q.dir === 'to-latin'
-    ? { text: `How do you say **“${q.word.en}”** in Latin? _(${q.word.course})_`, chips: ['Skip', 'Stop quiz'] }
+    ? { text: `How do you say **“${q.word.en}”** in ${LANGUAGE}? _(${q.word.course})_`, chips: ['Skip', 'Stop quiz'] }
     : { text: `What does _${headOf(q.word)}_ mean?`, say: headOf(q.word), chips: ['Skip', 'Stop quiz'] };
 
 export function checkAnswer(q: QuizQ, input: string): { correct: boolean; reply: Reply } {
@@ -128,14 +148,26 @@ export function checkAnswer(q: QuizQ, input: string): { correct: boolean; reply:
     correct = meanings(q.word.en).some((m) => m === got || m === got2 || (m.length >= 5 && levenshtein(m, got2) <= 2));
   }
   actions.answer(q.word.id, correct, correct ? 5 : 0);
-  const praise = ['Optimē!', 'Bene!', 'Euge!', 'Rēctē!'][Math.floor(Math.random() * 4)];
+  const praise = LANG.praise[Math.floor(Math.random() * LANG.praise.length)];
   const text = correct
     ? `${praise} _${head}_ = **${q.word.en}**.${typo ? ` (Watch the spelling: _${head}_.)` : ''} +5 XP`
-    : `Not quite: _${head}_ means **${q.word.en}**. Say it: **${respell(head)}**. I’ll ask it again later.`;
+    : `Not quite: _${head}_ means **${q.word.en}**. ${sayIt(head)} I’ll ask it again later.`;
   return { correct, reply: { text, say: head } };
 }
 
 function conjugate(verb: string): Reply | null {
+  if (!LATIN) {
+    if (!REF) return null;
+    const r = REF;
+    const t = r.tenses[0];
+    const v = r.verbs.find((x) => clean(x.inf) === clean(verb));
+    if (!v) return null;
+    const forms = v.forms[t.id];
+    return {
+      text: `**${v.inf}** (${v.meaning}), ${t.label.toLowerCase()}: ${forms.map((f, i) => `_${f}_ (${LANG_ID === 'fr' && i === 0 && /^[aeéèêiîouh]/i.test(f) ? 'j’' : r.persons[i]})`).join(', ')}. The Lexicon’s Verbs tab has more tenses.`,
+      say: forms.join(', '),
+    };
+  }
   const v = VERBS.find((x) => fold(headword(x.parts)) === clean(verb) || fold(x.inf) === clean(verb));
   if (!v) return null;
   const forms = v.forms.present.map((f) => f.replace('|', ''));
@@ -147,7 +179,7 @@ function conjugate(verb: string): Reply | null {
 }
 
 const HELP: Reply = {
-  text: 'I’m **Auxilium** (“help”). I can **quiz you** on your weakest words, tell you **what a Latin word means**, **how to say** an English word, **conjugate** a verb, or say any **number** in Latin. Try one:',
+  text: `I’m **Auxilium** (“help”). I can **quiz you** on your weakest words, tell you **what a ${LANGUAGE} word means**, **how to say** an English word, **conjugate** a verb, or say any **number** in ${LANGUAGE}. Try one:`,
   chips: START_CHIPS,
 };
 
@@ -159,16 +191,25 @@ export function localReply(input: string): Reply | 'quiz' | 'progress' | null {
   if (/^(help|what can you do|commands?)\b/.test(low)) return HELP;
   if (/^(quiz|test|practi[cs]e|review|drill|ask me)/.test(low)) return 'quiz';
   if (/(my progress|weak words|how am i doing|stats)/.test(low)) return 'progress';
+  if (!LATIN && (/^(hi|hello|hey|hallo|hola|bonjour|salut)\b/.test(f)))
+    return { text: `_${LANG.hello}_ I’m Auxilium, your ${LANGUAGE} buddy. Tap something to practise:`, say: LANG.hello, chips: START_CHIPS };
   if (/^(hi|hello|hey|salve|ave|salvete)\b/.test(f)) return { text: '_Salvē!_ I’m Auxilium, your Latin buddy. _Quid agis?_ (How are you?) Or tap something to practise:', say: 'Salvē! Quid agis?', chips: START_CHIPS };
   if (/^(bene|optime|bene sum)\b/.test(f)) return { text: '_Optimē!_ (Great!) Shall we practise?', say: 'Optimē!', chips: ['Quiz me', 'Help'] };
   if (/^(thanks|thank you|gratias)/.test(f)) return { text: '_Libenter!_ (You’re welcome!)', say: 'Libenter!' };
 
   let m = low.match(/^(?:conjugate|conj)\s+(.+)$/);
-  if (m) return conjugate(m[1]) ?? { text: `I don’t have a full table for “${m[1]}”. Try _amō_, _videō_, _dūcō_, _audiō_ or _sum_.` };
+  if (m) {
+    const tryThese = LATIN ? '_amō_, _videō_, _dūcō_, _audiō_ or _sum_' : (REF?.verbs ?? []).slice(0, 6).map((v) => `_${v.inf}_`).join(', ');
+    return conjugate(m[1]) ?? { text: `I don’t have a full table for “${m[1]}”. Try ${tryThese}.` };
+  }
 
   m = low.match(/(\d{1,4})/);
-  if (m && /(^\d+$|number|latin|roman|say|how)/.test(low)) {
+  if (m && /(^\d+$|number|latin|roman|say|how|german|spanish|french)/.test(low)) {
     const n = Number(m[1]);
+    if (!LATIN) {
+      if (!REF || n < 1 || n > 9999) return { text: 'I can do numbers from 1 to 9999.' };
+      return { text: `**${n}** is _${REF.numberWords(n)}_.`, say: REF.numberSpeech(n) };
+    }
     const words = toLatinWords(n);
     return words ? { text: `**${n}** is _${words}_ (Roman numeral **${toRoman(n)}**).`, say: words } : { text: 'I can do numbers from 1 to 3999.' };
   }
@@ -182,9 +223,9 @@ export function localReply(input: string): Reply | 'quiz' | 'progress' | null {
     return null;
   }
 
-  m = low.match(/^(?:how do (?:you|i) say|how to say|how would you say|latin for|what's the latin for|what is the latin for|translate|say)\s+(.+)$/);
+  m = low.match(/^(?:how do (?:you|i) say|how to say|how would you say|latin for|what's the latin for|what is the latin for|(?:german|spanish|french) for|what's the (?:german|spanish|french) for|translate|say)\s+(.+)$/);
   if (m) {
-    const target = m[1].replace(/\s+in latin$/, '');
+    const target = m[1].replace(/\s+in (latin|german|spanish|french)$/, '');
     const found = findEnglish(target);
     if (found.length) {
       const [first, ...more] = found;
@@ -211,12 +252,12 @@ export function localReply(input: string): Reply | 'quiz' | 'progress' | null {
 
 export const AI_URL = 'http://localhost:11434';
 
-const SYSTEM = `You are Auxilium, a friendly, encouraging Latin tutor inside LatinLearn, an app for teenagers.
-Help the learner practise classical Latin. Keep every reply short (under 100 words).
-Always write Latin with macrons for long vowels (e.g. "Salvē, amīce!").
-If the learner writes Latin, gently correct mistakes and explain in simple English.
-End with one short practice question in Latin with its English translation in brackets.
-Keep everything suitable for a 13-year-old. If asked about something unrelated to Latin or Rome, bring it back to Latin kindly.`;
+const SYSTEM = `You are Auxilium, a friendly, encouraging ${LANGUAGE} tutor inside ${LANG.app}, an app for teenagers.
+Help the learner practise ${LATIN ? 'classical Latin' : `everyday ${LANGUAGE}`}. Keep every reply short (under 100 words).
+${LATIN ? 'Always write Latin with macrons for long vowels (e.g. "Salvē, amīce!").' : `Always write ${LANGUAGE} with correct accents and spelling.`}
+If the learner writes ${LANGUAGE}, gently correct mistakes and explain in simple English.
+End with one short practice question in ${LANGUAGE} with its English translation in brackets.
+Keep everything suitable for a 13-year-old. If asked about something unrelated to ${LANGUAGE} or ${LANG.place}, bring it back to ${LANGUAGE} kindly.`;
 
 /** Installed chat models, or null if Ollama isn't reachable from this page. */
 export async function aiModels(): Promise<string[] | null> {

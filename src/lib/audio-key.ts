@@ -3,12 +3,14 @@
  * clip, except a closing "?", which changes the intonation.
  */
 export function audioKey(text: string): string {
-  const t = text.normalize('NFC').toLowerCase();
+  const t = text.normalize('NFC').toLowerCase().replace(/’/g, "'");
   const q = /\?\s*$/.test(t) ? '?' : '';
+  // Letters of any language; hyphens and apostrophes stay inside words (-que, vingt-deux, j'aime).
   const words = t
-    .replace(/[^a-zāēīōūȳ-]+/g, ' ')
+    .replace(/[^\p{L}'-]+/gu, ' ')
     .split(' ')
-    .filter((w) => /[a-zāēīōūȳ]/.test(w));
+    .map((w) => w.replace(/^'+|'+$/g, ''))
+    .filter((w) => /\p{L}/u.test(w));
   return words.length ? words.join(' ') + q : '';
 }
 

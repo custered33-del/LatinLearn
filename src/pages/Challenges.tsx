@@ -17,6 +17,7 @@ import { SPEED_STARS, challengesDone, speedStars, starsFor } from '../lib/tasks'
 import { href } from '../router';
 import { NextLink } from './Course';
 import './challenges.css';
+import { L, LANG } from '../lang';
 
 const TYPE_INFO: Record<ChallengeType, { label: string; icon: IconName }> = {
   gapfill: { label: 'Fill the gap', icon: 'edit' },
@@ -113,7 +114,7 @@ function GapFill({ items, onFinish }: { items: GapItem[]; onFinish: Finish }) {
             {item.show}
           </div>
         )}
-        <p class="gap-sentence" lang="la">
+        <p class="gap-sentence" lang={L}>
           {before}
           <span class={cx('gap', solved && 'filled')}>{solved ? answer : '?'}</span>
           {after}
@@ -125,7 +126,7 @@ function GapFill({ items, onFinish }: { items: GapItem[]; onFinish: Finish }) {
             <button
               type="button"
               key={o}
-              lang="la"
+              lang={L}
               class={cx('opt', wrong.includes(o) && 'wrong', solved && o === answer && 'right')}
               disabled={solved || wrong.includes(o)}
               onClick={() => pick(o)}
@@ -163,7 +164,7 @@ function GapFill({ items, onFinish }: { items: GapItem[]; onFinish: Finish }) {
 
 const words = (s: string) =>
   s
-    .replace(/[.,!?;:—…]/g, ' ')
+    .replace(/[.,!?;:—…¿¡«»]/g, ' ')
     .split(/\s+/)
     .filter(Boolean);
 const normalizeSentence = (s: string) => words(fold(s)).join(' ');
@@ -178,7 +179,7 @@ function sentenceTiles(s: string): string[] {
   const out: string[] = [];
   let start = true;
   for (const tok of s.split(/\s+/)) {
-    const w = tok.replace(/[.,!?;:—…]/g, '');
+    const w = tok.replace(/[.,!?;:—…¿¡«»]/g, '');
     if (w) out.push(start ? w.charAt(0).toLowerCase() + w.slice(1) : w);
     start = /[.!?]$/.test(tok);
   }
@@ -232,12 +233,12 @@ function Builder({ items, onFinish }: { items: BuildItem[]; onFinish: Finish }) 
     <>
       <GameTop index={i} solved={done} total={deck.length} label="Challenge progress" />
       <div class="game-card" key={i}>
-        <p class="q-kicker">Say it in Latin</p>
+        <p class="q-kicker">Say it in {LANG.language}</p>
         <p class="build-en">“{item.en}”</p>
         <div class={cx('build-answer', status)} aria-live="polite" aria-label="Your sentence">
           {placed.length === 0 && <span class="build-placeholder">Tap the tiles below to build the sentence…</span>}
           {placed.map((id, k) => (
-            <button type="button" key={id} class="tile-word placed" lang="la" onClick={() => remove(id)} disabled={done}>
+            <button type="button" key={id} class="tile-word placed" lang={L} onClick={() => remove(id)} disabled={done}>
               {k === 0 ? capitalize(tileText(id)) : tileText(id)}
             </button>
           ))}
@@ -247,7 +248,7 @@ function Builder({ items, onFinish }: { items: BuildItem[]; onFinish: Finish }) 
             <button
               type="button"
               key={t.id}
-              lang="la"
+              lang={L}
               class={cx('tile-word', placed.includes(t.id) && 'used')}
               onClick={() => place(t.id)}
               disabled={done || placed.includes(t.id)}
@@ -281,12 +282,12 @@ function Builder({ items, onFinish }: { items: BuildItem[]; onFinish: Finish }) 
               <div>
                 <p class="fb-title">{status === 'right' ? (misses ? 'You got it!' : 'Perfect first time!') : 'Here’s the answer'}</p>
                 <p>
-                  <b class="la" lang="la">
+                  <b class="la" lang={L}>
                     {item.answers[0]}
                   </b>{' '}
                   <AudioButton text={item.answers[0]} size="sm" />
                 </p>
-                {item.answers.length > 1 && <p class="muted small">Latin word order is flexible: other orders work too.</p>}
+                {item.answers.length > 1 && <p class="muted small">Other correct word orders work too.</p>}
               </div>
             </div>
           )}
@@ -364,7 +365,7 @@ function Dialogue({ challenge, onFinish }: { challenge: Extract<Challenge, { typ
               )}
               <div class="bubble">
                 {line.who === 'them' && <span class="bubble-name">{partner.name}</span>}
-                <span class="bubble-la" lang="la">
+                <span class="bubble-la" lang={L}>
                   {line.la}
                 </span>
                 {line.who === 'them' && (
@@ -403,7 +404,7 @@ function Dialogue({ challenge, onFinish }: { challenge: Extract<Challenge, { typ
                 <button
                   type="button"
                   key={o.la}
-                  lang="la"
+                  lang={L}
                   class={cx('dlg-opt', wrong.includes(o.la) && 'wrong')}
                   disabled={wrong.includes(o.la)}
                   onClick={() => reply(o.la)}
@@ -458,7 +459,7 @@ function Spot({ challenge, onFinish }: { challenge: Extract<Challenge, { type: '
       <GameTop index={i} solved={solved} total={prompts.length} label="Challenge progress" />
       <div class="game-card">
         <div class="spot-prompt" key={i}>
-          <p class="spot-la" lang="la">
+          <p class="spot-la" lang={L}>
             {prompt.la} <AudioButton text={prompt.la} size="sm" />
           </p>
           {hint || solved ? (
@@ -491,7 +492,7 @@ function Spot({ challenge, onFinish }: { challenge: Extract<Challenge, { type: '
           ))}
         </div>
         <div aria-live="polite">
-          {!solved && wrong.length > 0 && <p class="try-again">Not there. Read the Latin again!</p>}
+          {!solved && wrong.length > 0 && <p class="try-again">Not there. Read the {LANG.language} again!</p>}
           {solved && (
             <div class="feedback good">
               <span class="fb-icon">
@@ -576,7 +577,7 @@ function Paint({ challenge, course, onFinish }: { challenge: Extract<Challenge, 
         <PaintScene fills={fills} active={solved ? null : prompt.region} />
         <div class="paint-side">
           <div class="spot-prompt" key={i}>
-            <p class="spot-la" lang="la">
+            <p class="spot-la" lang={L}>
               {prompt.la} <AudioButton text={prompt.la} size="sm" />
             </p>
             {hint || solved ? (
@@ -604,7 +605,7 @@ function Paint({ challenge, course, onFinish }: { challenge: Extract<Challenge, 
           <div aria-live="polite">
             {!solved && lastWrong && (
               <p class="try-again">
-                That’s <b lang="la">{headOf(lastWrong)}</b> ({lastWrong.en}). Try again!
+                That’s <b lang={L}>{headOf(lastWrong)}</b> ({lastWrong.en}). Try again!
               </p>
             )}
             {solved && (
@@ -613,7 +614,7 @@ function Paint({ challenge, course, onFinish }: { challenge: Extract<Challenge, 
                   <Icon name="check" size={18} />
                 </span>
                 <p class="fb-title">
-                  <span lang="la">{headOf(byId(prompt.color))}</span> = {byId(prompt.color).en}
+                  <span lang={L}>{headOf(byId(prompt.color))}</span> = {byId(prompt.color).en}
                 </p>
               </div>
             )}
@@ -708,7 +709,7 @@ function Speed({ course, onFinish }: { course: Course; onFinish: Finish }) {
         </span>
         <h2>Ready?</h2>
         <p class="muted">
-          You get {SPEED_SECONDS} seconds. Tap <b>✓</b> if the meaning matches the Latin word and <b>✗</b> if it doesn’t. Right answers score
+          You get {SPEED_SECONDS} seconds. Tap <b>✓</b> if the meaning matches the {LANG.language} word and <b>✗</b> if it doesn’t. Right answers score
           +1, wrong ones −1.
         </p>
         <p class="muted small">
@@ -736,7 +737,7 @@ function Speed({ course, onFinish }: { course: Course; onFinish: Finish }) {
       </div>
       <div class={cx('game-card speed-card', flash)}>
         {streak >= 3 && <span class="streak-badge">🔥 {streak} in a row</span>}
-        <p class="speed-la" lang="la">
+        <p class="speed-la" lang={L}>
           {headOf(card.v)}
         </p>
         <p class="speed-eq" aria-hidden="true">
@@ -875,7 +876,7 @@ function ChallengeHub({ course }: { course: Course }) {
         <p class="eyebrow">Step 5 · Challenges</p>
         <h1>Challenges</h1>
         <p class="lede-sm">
-          Put your {course.title.toLowerCase()} Latin to work. Earn up to three stars in each game; a star in every one completes this step.
+          Put your {course.title.toLowerCase()} {LANG.language} to work. Earn up to three stars in each game; a star in every one completes this step.
         </p>
       </header>
 

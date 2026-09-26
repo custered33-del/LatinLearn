@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useState } from 'preact/hooks';
-import { planClips } from './audio-key';
+import { audioId, audioKey, planClips } from './audio-key';
 import { respell, stripMacrons, toItalianSpelling } from './latin';
+import { LANG, LANG_ID, type LangId } from '../lang';
 
 // ---------------------------------------------------------------------------
 // Audio settings
@@ -50,7 +51,26 @@ export function useAudioSettings(): AudioSettings {
 // ---------------------------------------------------------------------------
 
 /** The play file sits in the project folder, next to public/. */
-const CLIP_BASE = import.meta.env.MODE === 'play' ? 'public/audio/' : 'audio/';
+const CLIP_BASE = (import.meta.env.MODE === 'play' ? 'public/audio/' : 'audio/') + (LANG_ID === 'la' ? '' : `${LANG_ID}/`);
+
+interface VoiceIndex {
+  ids: string[];
+  /** Pronunciation guides for the modern languages, keyed by clip id. */
+  say?: Record<string, string>;
+}
+const INDEX: Record<LangId, () => Promise<{ default: VoiceIndex }>> = {
+  la: () => import('../data/audio-index.json'),
+  de: () => import('../data/audio-de.json'),
+  es: () => import('../data/audio-es.json'),
+  fr: () => import('../data/audio-fr.json'),
+};
+let guides: Record<string, string> = {};
+
+/** "How to say it" guide: worked out live for Latin, recorded with the clips for other languages. */
+export function sayGuide(text: string): string {
+  if (LANG_ID === 'la') return respell(text);
+  return guides[audioId(audioKey(text))] ?? '';
+}
 const canPlayClips = typeof Audio !== 'undefined';
 
 let clips: Set<string> | null = null;
@@ -69,9 +89,10 @@ export function useVoiceReady(): boolean {
 
 /** Load the list of recorded clips (a small separate chunk). */
 export function loadVoice(): Promise<void> {
-  clipsLoading ??= import('../data/audio-index.json').then(
+  clipsLoading ??= INDEX[LANG_ID]().then(
     (m) => {
       clips = new Set(m.default.ids);
+      guides = m.default.say ?? {};
     },
     () => {
       clips = new Set();
@@ -181,12 +202,15 @@ if (synth) {
 
 /** Browsers almost never ship a Latin voice; Italian vowels are the closest widely available match. */
 function pickVoice(): SpeechSynthesisVoice | undefined {
-  return voices.find((v) => /^la([-_]|$)/i.test(v.lang)) ?? voices.find((v) => /^it([-_]|$)/i.test(v.lang));
+  const is = (code: string) => (v: SpeechSynthesisVoice) => new RegExp(`^${code}([-_]|$)`, 'i').test(v.lang);
+  if (LANG_ID !== 'la') return voices.find(is(LANG_ID));
+  return voices.find(is('la')) ?? voices.find(is('it'));
 }
 
 export function browserVoiceDescription(): string {
   const v = pickVoice();
   if (!synth) return 'This browser has no built-in voices.';
+  if (LANG_ID !== 'la') return v ? `Uses the ${LANG.language} voice “${v.name}”.` : `No ${LANG.language} voice is installed in this browser.`;
   if (!v) return 'No Italian voice is installed, so an English voice reads the pronunciation guide.';
   if (/^la/i.test(v.lang)) return `Uses the Latin voice “${v.name}”.`;
   return `Uses the Italian voice “${v.name}” with adjusted spelling.`;
@@ -196,7 +220,10 @@ function browserSpeak(latin: string): void {
   if (!synth) return;
   const voice = pickVoice();
   const u = new SpeechSynthesisUtterance();
-  if (voice && /^la/i.test(voice.lang)) {
+  if (LANG_ID !== 'la') {
+    u.text = latin;
+    u.lang = LANG.speech;
+  } else if (voice && /^la/i.test(voice.lang)) {
     u.text = stripMacrons(latin);
   } else if (voice) {
     u.text = toItalianSpelling(latin);
@@ -285,7 +312,7 @@ export interface Listening {
  * Listen for one utterance. Browsers have no Latin model, so we use Italian,
  * whose spelling-to-sound rules are closest, and compare phonetically afterwards.
  */
-export function listen(lang = 'it-IT', timeoutMs = 7000): Listening {
+export function listen(lang = LANG_ID === 'la' ? 'it-IT' : LANG.speech, timeoutMs = 7000): Listening {
   if (!RecognitionImpl) return { result: Promise.reject(new Error('unsupported')), cancel: () => {} };
   const rec = new RecognitionImpl();
   rec.lang = lang;

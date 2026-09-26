@@ -12,6 +12,7 @@ import { toRoman } from '../lib/numerals';
 import { MAX_STRENGTH, actions, courseOf, useProgress } from '../lib/progress';
 import { speak } from '../lib/speech';
 import { href } from '../router';
+import { L } from '../lang';
 
 export const STEP_ICONS: Record<StepId, IconName> = {
   learn: 'book',
@@ -50,7 +51,7 @@ export function CourseOverview({ course }: { course: Course }) {
         </a>
         <p class="course-hero-kicker">Course {course.n} of {COURSES.length}</p>
         <h1>{course.title}</h1>
-        <p class="course-hero-la" lang="la">
+        <p class="course-hero-la" lang={L}>
           {course.la}
         </p>
         <p class="course-hero-blurb">{course.blurb}</p>
@@ -99,7 +100,7 @@ export function CourseOverview({ course }: { course: Course }) {
               <span class="ring-big">{s.mastery}%</span>
             </Ring>
             <div>
-              <p class="level-now" lang="la">
+              <p class="level-now" lang={L}>
                 {s.level.la}
               </p>
               <p class="muted">{s.level.en}</p>
@@ -111,7 +112,7 @@ export function CourseOverview({ course }: { course: Course }) {
           <ol class="ladder" aria-label="Mastery levels">
             {LEVELS.map((l) => (
               <li key={l.la} class={cx(s.mastery >= l.min && 'reached', s.level === l && 'current')}>
-                <span lang="la">{l.la}</span>
+                <span lang={L}>{l.la}</span>
                 <span class="muted">{l.min}%+</span>
               </li>
             ))}
@@ -152,7 +153,7 @@ export function CourseOverview({ course }: { course: Course }) {
                   title={v.en}
                   aria-label={`${headOf(v)}, ${v.en}, strength ${str} of ${MAX_STRENGTH}`}
                 >
-                  <span lang="la">{headOf(v)}</span>
+                  <span lang={L}>{headOf(v)}</span>
                   <span class="bars" aria-hidden="true">
                     {Array.from({ length: MAX_STRENGTH }, (_, i) => (
                       <i key={i} class={i < str ? 'on' : undefined} />

@@ -13,12 +13,20 @@ const inRoundedSquare = (x, y) => {
   return x >= 0 && x <= 64 && y >= 0 && y <= 64 && (x - cx) ** 2 + (y - cy) ** 2 <= r * r;
 };
 const inL = (x, y) => (x >= 18 && x <= 25 && y >= 18 && y <= 46) || (x >= 18 && x <= 39 && y >= 40 && y <= 46);
+// GermanLearn, SpanishLearn and FrenchLearn: flag background, white "L" with a soft dark outline.
+const inL2 = (x, y) => (x >= 16 && x <= 27 && y >= 16 && y <= 48) || (x >= 16 && x <= 41 && y >= 38 && y <= 48);
+const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const FLAGS = {
+  de: (x, y) => hex(y < 21.33 ? '#1a1a1a' : y < 42.67 ? '#dd0000' : '#ffce00'),
+  es: (x, y) => hex(y < 16 || y >= 48 ? '#c60b1e' : '#ffc400'),
+  fr: (x, y) => hex(x < 21.33 ? '#0055a4' : x < 42.67 ? '#ffffff' : '#ef4135'),
+};
 const inBar = (x, y) => x >= 42 && x <= 48 && y >= 18 && y <= 46;
 const lerp = (a, b, t) => a + (b - a) * t;
 const FROM = [0x7c, 0x4d, 0xff];
 const TO = [0xff, 0x4f, 0x79];
 
-function render(size) {
+function render(size, flag) {
   const px = Buffer.alloc(size * size * 4);
   const ss = 4; // 4×4 supersampling for smooth edges
   for (let py = 0; py < size; py++) {
@@ -30,8 +38,11 @@ function render(size) {
           const y = ((py + (sy + 0.5) / ss) / size) * 64;
           if (!inRoundedSquare(x, y)) continue;
           const t = (x + y) / 128;
-          let c = FROM.map((f, k) => lerp(f, TO[k], t));
-          if (inL(x, y)) c = [255, 255, 255];
+          let c = flag ? flag(x, y) : FROM.map((f, k) => lerp(f, TO[k], t));
+          if (flag) {
+            if (inL(x, y)) c = [255, 255, 255];
+            else if (inL2(x, y)) c = c.map((v) => v * 0.55);
+          } else if (inL(x, y)) c = [255, 255, 255];
           else if (inBar(x, y)) c = c.map((v) => lerp(v, 255, 0.7));
           r += c[0]; g += c[1]; b += c[2]; a += 255;
         }
@@ -68,8 +79,8 @@ const chunk = (type, data) => {
   return Buffer.concat([len, body, crc]);
 };
 
-function png(size) {
-  const rgba = render(size);
+function png(size, flag) {
+  const rgba = render(size, flag);
   const raw = Buffer.alloc(size * (size * 4 + 1));
   for (let y = 0; y < size; y++) rgba.copy(raw, y * (size * 4 + 1) + 1, y * size * 4, (y + 1) * size * 4);
   const ihdr = Buffer.alloc(13);
@@ -85,7 +96,7 @@ function png(size) {
 }
 
 function ico(sizes) {
-  const images = sizes.map(png);
+  const images = sizes.map((s) => png(s));
   const header = Buffer.alloc(6 + 16 * sizes.length);
   header.writeUInt16LE(0, 0);
   header.writeUInt16LE(1, 2);
@@ -107,4 +118,8 @@ function ico(sizes) {
 writeFileSync(new URL('icon-192.png', OUT), png(192));
 writeFileSync(new URL('icon-512.png', OUT), png(512));
 writeFileSync(new URL('latinlearn.ico', OUT), ico([16, 24, 32, 48, 64, 128, 256]));
-console.log('Wrote public/icon-192.png, public/icon-512.png, public/latinlearn.ico');
+for (const [id, flag] of Object.entries(FLAGS)) {
+  writeFileSync(new URL(`icon-${id}-192.png`, OUT), png(192, flag));
+  writeFileSync(new URL(`icon-${id}-512.png`, OUT), png(512, flag));
+}
+console.log('Wrote public/icon-192.png, public/icon-512.png, public/latinlearn.ico and the flag icons');

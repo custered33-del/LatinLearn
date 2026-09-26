@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "npm run audio && npm run build:web && npm run build:play",
     "build:web": "tsc --noEmit && vite build",
-    "audio": "node scripts/make-audio.mjs && node scripts/make-audio.mjs --male",
+    "audio": "node scripts/make-audio.mjs",
     "build:play": "vite build --mode play && node scripts/make-play-file.mjs",
     "icons": "node scripts/make-icon.mjs",
     "preview": "vite preview",
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@breezystack/lamejs": "^1.2.7",
+    "@echogarden/espeak-ng-emscripten": "^0.3.5",
     "@preact/preset-vite": "^2.10.6",
     "onnxruntime-node": "^1.30.0",
     "typescript": "^7.0.2",

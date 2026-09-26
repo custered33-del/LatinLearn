@@ -7,6 +7,7 @@ import { cx } from '../lib/hooks';
 import { actions, courseOf, getProgress } from '../lib/progress';
 import { shuffle } from '../lib/random';
 import { NextLink } from './Course';
+import { L, LANG } from '../lang';
 
 const PAIRS_PER_ROUND = 6;
 const MAX_ROUNDS = 2;
@@ -174,15 +175,15 @@ export function Match({ course }: { course: Course }) {
         </span>
       </div>
       <p class="drill-instructions">
-        {startedAt ? `Round ${r + 1} of ${rounds.length}` : 'Tap a Latin word, then its meaning. The clock starts on your first tap.'}
+        {startedAt ? `Round ${r + 1} of ${rounds.length}` : `Tap a ${LANG.language} word, then its meaning. The clock starts on your first tap.`}
       </p>
       <div class="match-board" key={r}>
-        <div class="match-col" role="group" aria-label="Latin">
+        <div class="match-col" role="group" aria-label={LANG.language}>
           {round.left.map((id, i) => (
             <button
               type="button"
               key={id}
-              lang="la"
+              lang={L}
               style={{ '--i': i }}
               class={cx('tile la', selL === id && 'sel', matched.has(id) && 'done', wrong?.[0] === id && 'wrong')}
               onClick={() => pick('l', id)}

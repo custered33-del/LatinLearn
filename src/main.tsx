@@ -2,10 +2,13 @@ import { render } from 'preact';
 import './fonts.css';
 import './styles.css';
 import { App } from './app';
+import { loadCourses } from './data/courses';
+import { LANG_ID, applyLanguage } from './lang';
 import { loadVoice } from './lib/speech';
 import './lib/cloud';
 
-render(<App />, document.getElementById('app')!);
+applyLanguage();
+void loadCourses(LANG_ID).then(() => render(<App />, document.getElementById('app')!));
 
 // Fetch the voice's clip list once the page is idle, so the first tap on a speaker plays instantly.
 const idle = window.requestIdleCallback ?? ((fn: () => void) => setTimeout(fn, 800));

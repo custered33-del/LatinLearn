@@ -16,6 +16,16 @@ An interactive web app that teaches Latin to teenagers through eleven self-conta
 | X | Food & Drink | Cibus et Pōtus | food, hungry/thirsty, ordering, the object ending |
 | XI | Body & Feelings | Corpus et Animus | body parts, what hurts, feelings that agree |
 
+## GermanLearn, SpanishLearn and FrenchLearn
+
+Don't like Latin? Pick another language:
+
+- **On a PC:** triple-click the logo in the top corner.
+- **On a phone:** hold the logo for 3 seconds.
+- **Anywhere:** Settings → **Bored of Latin? Pick another!** at the bottom.
+
+Each language has the same eleven courses written in that language, its own Piper voices (German: Kerstin and Thorsten; Spanish: Sharvard F and M; French: Jessica and Pierre), flag colours, app name and home-screen icon, and its own Lexicon. Progress is kept separately for each language, and one login code saves all of them. Record new clips with `npm run audio` (or `npm run audio -- --lang de`).
+
 ## On your phone (online and offline)
 
 LatinLearn is hosted free on **GitHub Pages**: every push to `main` runs the tests, builds the site and publishes it (see `.github/workflows/deploy.yml`).

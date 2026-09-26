@@ -1,10 +1,10 @@
 import type { ComponentChildren } from 'preact';
 import { useId } from 'preact/hooks';
 import type { Course, Table } from '../data/types';
-import { respell } from '../lib/latin';
-import { speak, ttsSupported } from '../lib/speech';
+import { sayGuide, speak, ttsSupported, useVoiceReady } from '../lib/speech';
 import { cx } from '../lib/hooks';
 import { Icon } from './Icon';
+import { L } from '../lang';
 
 /** CSS custom properties that theme a subtree with a course's colours. */
 export const courseStyle = (c: Course) => ({ '--c1': c.colors[0], '--c2': c.colors[1] }) as Record<string, string>;
@@ -80,7 +80,9 @@ export function AudioButton({ text, size = 'md', class: cls }: { text: string; s
  * it learners can mistake the guide for the spelling ("OO-nus" read as "onus").
  */
 export function Say({ text, class: cls }: { text: string; class?: string }) {
-  const guide = respell(text);
+  useVoiceReady(); // other languages' guides arrive with the voice's clip list
+  const guide = sayGuide(text);
+  if (!guide) return null;
   return (
     <span class={cx('say', cls)} title="How to say it (not the spelling)">
       <span class="say-tag" aria-hidden="true">
@@ -101,7 +103,7 @@ export function Rich({ text }: { text: string }) {
         p.startsWith('**') && p.endsWith('**') ? (
           <strong key={i}>{p.slice(2, -2)}</strong>
         ) : p.length > 2 && p.startsWith('_') && p.endsWith('_') ? (
-          <em key={i} class="la" lang="la">
+          <em key={i} class="la" lang={L}>
             {p.slice(1, -1)}
           </em>
         ) : (
@@ -137,7 +139,7 @@ export function DataTable({ table, caption }: { table: Table; caption?: string }
                     {cell}
                   </th>
                 ) : (
-                  <td key={i} class={la.has(i) ? 'la' : undefined} lang={la.has(i) ? 'la' : undefined}>
+                  <td key={i} class={la.has(i) ? 'la' : undefined} lang={la.has(i) ? L : undefined}>
                     {cell}
                   </td>
                 ),
@@ -153,9 +155,9 @@ export function DataTable({ table, caption }: { table: Table; caption?: string }
 /** Paradigm form: "puell|ārum" renders the ending highlighted. */
 export function Form({ f }: { f: string }) {
   const i = f.indexOf('|');
-  if (i < 0) return <span lang="la">{f}</span>;
+  if (i < 0) return <span lang={L}>{f}</span>;
   return (
-    <span lang="la">
+    <span lang={L}>
       {f.slice(0, i)}
       <b class="end">{f.slice(i + 1)}</b>
     </span>

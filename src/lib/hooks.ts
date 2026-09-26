@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'preact/hooks';
+import { LANG } from '../lang';
 
 /** Set the document title; pass null to leave it to a child page. */
 export function useTitle(title: string | null): void {
   useEffect(() => {
-    if (title !== null) document.title = title ? `${title} · LatinLearn` : 'LatinLearn';
+    if (title !== null) document.title = title ? `${title} · ${LANG.app}` : LANG.app;
   }, [title]);
 }
 

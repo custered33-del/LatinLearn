@@ -6,6 +6,7 @@ import { AudioButton, ProgressBar, Ring, Say } from '../components/ui';
 import { cx, useKeys } from '../lib/hooks';
 import { actions, getProgress } from '../lib/progress';
 import { NextLink } from './Course';
+import { L, LANG } from '../lang';
 
 type Side = 'la' | 'en';
 
@@ -22,13 +23,13 @@ function LatinFace({ v, full }: { v: VocabItem; full?: boolean }) {
   const head = headOf(v);
   return (
     <>
-      <p class="face-kicker">Latin</p>
-      <p class="flash-word la" lang="la">
+      <p class="face-kicker">{LANG.language}</p>
+      <p class="flash-word la" lang={L}>
         {head}
       </p>
       <Say text={head} />
       {full && v.la !== head && (
-        <p class="face-sub" lang="la">
+        <p class="face-sub" lang={L}>
           {v.la}
         </p>
       )}
@@ -121,7 +122,7 @@ export function Flashcards({ course }: { course: Course }) {
           {tricky.size > 0 && (
             <ul class="chip-list" aria-label="Tricky words">
               {[...tricky].map((id) => (
-                <li key={id} class="word-pill" lang="la">
+                <li key={id} class="word-pill" lang={L}>
                   {headOf(byId(id))}
                 </li>
               ))}
@@ -178,7 +179,7 @@ export function Flashcards({ course }: { course: Course }) {
         </span>
         <button type="button" class="btn btn-ghost btn-sm" onClick={() => setFront(front === 'la' ? 'en' : 'la')}>
           <Icon name="swap" size={16} />
-          {front === 'la' ? 'Latin first' : 'English first'}
+          {front === 'la' ? `${LANG.language} first` : 'English first'}
         </button>
       </div>
 
@@ -214,7 +215,7 @@ export function Flashcards({ course }: { course: Course }) {
               {front === 'la' ? <EnglishFace v={v} /> : <LatinFace v={v} full />}
               {v.ex && (
                 <p class="face-ex">
-                  <span lang="la">{v.ex[0]}</span>
+                  <span lang={L}>{v.ex[0]}</span>
                   <span>{v.ex[1]}</span>
                 </p>
               )}

@@ -5,17 +5,25 @@
  */
 import { audioKey } from '../lib/audio-key';
 import { headword } from '../lib/latin';
-import { toLatinWords } from '../lib/numerals';
-import { COURSES, headOf } from './courses';
+import { headOf } from './courses';
 import { LAB_SAMPLES, LEXICON, STRESS_RULES } from './reference';
+import type { Course, LangRef } from './types';
 
-export function speakablePhrases(): string[] {
+/** Numbers the converter pieces together: 1–99, the hundreds and the thousands. */
+function numberChunks(ref: LangRef): string[] {
+  const out: string[] = [];
+  for (let n = 1; n <= 99; n++) out.push(ref.numberSpeech(n));
+  for (let h = 1; h <= 9; h++) out.push(ref.numberSpeech(h * 100), ref.numberSpeech(h * 100 + 1), ref.numberSpeech(h * 1000));
+  return out;
+}
+
+export function speakablePhrases(courses: Course[], ref: LangRef, latin = false): string[] {
   const out = new Set<string>();
   const add = (s: string | undefined) => {
     if (s && audioKey(s)) out.add(s.trim());
   };
 
-  for (const c of COURSES) {
+  for (const c of courses) {
     for (const v of c.vocab) {
       add(headOf(v));
       add(v.ex?.[0]);
@@ -44,13 +52,12 @@ export function speakablePhrases(): string[] {
     }
   }
 
-  for (const [la] of LEXICON) add(headword(la));
-  for (const r of STRESS_RULES) r.examples.forEach(add);
-  LAB_SAMPLES.forEach(add);
-
-  // The number converter pieces any number together from these.
-  for (let n = 1; n <= 99; n++) add(toLatinWords(n));
-  for (let n = 100; n <= 3000; n += 100) if (n <= 900 || n % 1000 === 0) add(toLatinWords(n));
+  if (latin) {
+    for (const [la] of LEXICON) add(headword(la));
+    for (const r of STRESS_RULES) r.examples.forEach(add);
+    LAB_SAMPLES.forEach(add);
+  }
+  numberChunks(ref).forEach(add);
 
   return [...out];
 }

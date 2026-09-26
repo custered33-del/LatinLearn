@@ -1,22 +1,49 @@
 import { describe, expect, it } from 'vitest';
-import { COURSES, challengesOf, headOf } from './courses';
+import { challengesOf, headOf } from './courses';
+import { courses as la } from './courses/la';
+import { courses as de } from './courses/de';
+import { courses as es } from './courses/es';
+import { courses as fr } from './courses/fr';
+import { ref as laRef } from './ref/la';
+import { ref as deRef } from './ref/de';
+import { ref as esRef } from './ref/es';
+import { ref as frRef } from './ref/fr';
 import { ADJECTIVES, LEXICON, NOUNS, VERBS } from './reference';
 import { audioId, audioKey } from '../lib/audio-key';
 import { toPhonemes } from '../lib/latin';
-import audioIndex from './audio-index.json';
+import audioLa from './audio-index.json';
+import audioDe from './audio-de.json';
+import audioEs from './audio-es.json';
+import audioFr from './audio-fr.json';
 import { speakablePhrases, speakableWords } from './speakable';
+import type { Course, LangRef } from './types';
 
-describe('course content', () => {
-  it('has eleven courses numbered in order', () => {
+const LANGS: [string, Course[], LangRef, { ids: string[] }][] = [
+  ['la', la, laRef, audioLa],
+  ['de', de, deRef, audioDe],
+  ['es', es, esRef, audioEs],
+  ['fr', fr, frRef, audioFr],
+];
+const ALL = LANGS.flatMap(([lang, courses]) => courses.map((c) => [`${lang}/${c.id}`, c] as const));
+
+describe.each(LANGS)('%s courses', (_lang, COURSES) => {
+  it('has eleven courses numbered in order, with the same ids as Latin', () => {
     expect(COURSES.map((c) => c.n)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    expect(COURSES.map((c) => c.id)).toEqual(la.map((c) => c.id));
   });
 
-  it('uses unique vocab ids across all courses', () => {
+  it('uses unique vocab, challenge and task ids', () => {
     const ids = COURSES.flatMap((c) => c.vocab.map((v) => v.id));
     expect(new Set(ids).size).toBe(ids.length);
+    const chs = COURSES.flatMap((c) => challengesOf(c).map((ch) => ch.id));
+    expect(new Set(chs).size).toBe(chs.length);
+    const tasks = COURSES.flatMap((c) => c.tasks.map((t) => t.id));
+    expect(new Set(tasks).size).toBe(tasks.length);
   });
+});
 
-  it.each(COURSES.map((c) => [c.id, c] as const))('%s is complete and consistent', (_id, c) => {
+describe('course content', () => {
+  it.each(ALL)('%s is complete and consistent', (_id, c) => {
     expect(c.vocab.length).toBeGreaterThanOrEqual(12);
     expect(c.quiz.length).toBeGreaterThanOrEqual(5);
     expect(c.sounds.length).toBeGreaterThan(0);
@@ -40,16 +67,9 @@ describe('course content', () => {
 
 describe('challenges and tasks', () => {
   const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  const words = (s: string) => fold(s).replace(/[.,!?;:—…]/g, ' ').split(/\s+/).filter(Boolean);
+  const words = (s: string) => fold(s).replace(/[.,!?;:—…¿¡«»]/g, ' ').split(/\s+/).filter(Boolean);
 
-  it('uses globally unique challenge and task ids', () => {
-    const ids = COURSES.flatMap((c) => challengesOf(c).map((ch) => ch.id));
-    expect(new Set(ids).size).toBe(ids.length);
-    const tasks = COURSES.flatMap((c) => c.tasks.map((t) => t.id));
-    expect(new Set(tasks).size).toBe(tasks.length);
-  });
-
-  it.each(COURSES.map((c) => [c.id, c] as const))('%s has valid challenges', (_id, course) => {
+  it.each(ALL)('%s has valid challenges', (_id, course) => {
     expect(course.challenges.length).toBeGreaterThanOrEqual(2);
     expect(course.tasks.length).toBeGreaterThanOrEqual(2);
 
@@ -128,24 +148,45 @@ describe('reference content', () => {
   });
 });
 
-describe('voice recordings', () => {
-  const phrases = speakablePhrases();
-  const recorded = new Set(audioIndex.ids);
+const FILES = new Set(Object.keys(import.meta.glob('/public/audio/**/*.mp3')));
+
+describe.each(LANGS)('%s voice recordings', (lang, courses, ref, index) => {
+  const phrases = speakablePhrases(courses, ref, lang === 'la');
+  const recorded = new Set(index.ids);
+  const dir = lang === 'la' ? '/public/audio/' : `/public/audio/${lang}/`;
 
   it('has a clip for every phrase and word the app can say (run `npm run audio` if this fails)', () => {
     const missing = [...phrases, ...speakableWords(phrases)].filter((t) => !recorded.has(audioId(audioKey(t))));
     expect(missing).toEqual([]);
   });
 
-  it('has the clip files on disk', () => {
-    const files = new Set(Object.keys(import.meta.glob('/public/audio/*.mp3')));
-    const lost = audioIndex.ids.filter((id) => !files.has(`/public/audio/${id}.mp3`));
+  it('has the female and male clip files on disk', () => {
+    const lost = index.ids.filter((id) => !FILES.has(`${dir}${id}.mp3`) || !FILES.has(`${dir}m/${id}.mp3`));
     expect(lost).toEqual([]);
   });
 
-  it('only uses sounds the Italian-trained voice knows', () => {
+  it.runIf(lang === 'la')('only uses sounds the Italian-trained voice knows', () => {
     const known = new Set(Array.from('abdefijklmnoprstuwŋɔɛɡɾʊˈː ,.!?;:'));
     const odd = phrases.filter((p) => Array.from(toPhonemes(p)).some((ch) => !known.has(ch)));
     expect(odd).toEqual([]);
+  });
+});
+
+describe('number words', () => {
+  it.each([
+    [deRef, 21, 'einundzwanzig'],
+    [deRef, 2026, 'zweitausendsechsundzwanzig'],
+    [deRef, 101, 'einhunderteins'],
+    [esRef, 21, 'veintiuno'],
+    [esRef, 100, 'cien'],
+    [esRef, 115, 'ciento quince'],
+    [esRef, 2026, 'dos mil veintiséis'],
+    [frRef, 71, 'soixante et onze'],
+    [frRef, 80, 'quatre-vingts'],
+    [frRef, 99, 'quatre-vingt-dix-neuf'],
+    [frRef, 200, 'deux cents'],
+    [frRef, 2026, 'deux mille vingt-six'],
+  ])('%#: %i → %s', (ref, n, words) => {
+    expect(ref.numberWords(n)).toBe(words);
   });
 });

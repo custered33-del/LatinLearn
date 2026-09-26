@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from 'preact/hooks';
 import type { CourseId, StepId } from '../data/types';
+import { LANG_ID, langKey, type LangId } from '../lang';
 
 export interface CourseProgress {
   steps: Partial<Record<StepId, true>>;
@@ -31,9 +32,11 @@ export interface Progress {
   last?: { course: CourseId; step: StepId };
 }
 
-const KEY = 'latinlearn:progress:v2';
+const BASE_KEY = 'latinlearn:progress:v2';
+/** Each language app keeps its own progress. */
+const KEY = langKey(BASE_KEY);
 /** Progress from before the September 2026 reset; deleted on first load. */
-const OLD_KEYS = ['latinlearn:progress:v1'];
+const OLD_KEYS = LANG_ID === 'la' ? ['latinlearn:progress:v1'] : [];
 export const MAX_STRENGTH = 5;
 
 const empty = (): Progress => ({ words: {}, courses: {}, challenges: {}, tasks: {}, xp: 0, streak: 0, lastDay: '' });
@@ -73,6 +76,27 @@ function commit(next: Progress): void {
     /* private mode: progress lasts for this session only */
   }
   notify();
+}
+
+/** Progress saved on this device for another language app (used by cloud sync). */
+export function readStored(id: LangId): Progress {
+  if (id === LANG_ID) return state;
+  try {
+    const raw = localStorage.getItem(langKey(BASE_KEY, id));
+    if (raw) return sanitize(JSON.parse(raw)) ?? empty();
+  } catch {
+    /* ignore */
+  }
+  return empty();
+}
+
+export function writeStored(id: LangId, p: Progress): void {
+  if (id === LANG_ID) return commit(p);
+  try {
+    localStorage.setItem(langKey(BASE_KEY, id), JSON.stringify(p));
+  } catch {
+    /* ignore */
+  }
 }
 
 /** Replace all progress (used by cloud sync). */

@@ -5,7 +5,12 @@
  * nothing is lost if you practise on your phone and your PC.
  */
 import { useEffect, useReducer } from 'preact/hooks';
-import { getProgress, mergeProgress, replaceProgress, sanitize, subscribeProgress, type Progress } from './progress';
+import type { LangId } from '../lang';
+import { getProgress, mergeProgress, readStored, sanitize, subscribeProgress, writeStored, type Progress } from './progress';
+
+/** One save holds every language app: `progress` is Latin, `langs` the others. */
+type Saves = Record<LangId, Progress>;
+const IDS: LangId[] = ['la', 'de', 'es', 'fr'];
 
 /** Firebase Realtime Database URL; cloud save is hidden until this is set. */
 export const CLOUD_URL: string = 'https://latinlearn-custered33-default-rtdb.europe-west1.firebasedatabase.app';
@@ -45,22 +50,32 @@ export function useCloud(): { code: string | null; status: CloudStatus } {
 
 const url = (c: string) => `${CLOUD_URL}/saves/${c}.json`;
 
-async function download(c: string): Promise<Progress | null | 'missing'> {
+async function download(c: string): Promise<Partial<Saves> | null | 'missing'> {
   const r = await fetch(url(c), { cache: 'no-store' });
   if (!r.ok) throw new Error(`cloud ${r.status}`);
-  const data = (await r.json()) as { app?: string; progress?: unknown } | null;
+  const data = (await r.json()) as { app?: string; progress?: unknown; langs?: Record<string, unknown> } | null;
   if (!data) return 'missing';
-  return data.app === APP ? sanitize(data.progress) : null;
+  if (data.app !== APP) return null;
+  const out: Partial<Saves> = {};
+  for (const id of IDS) {
+    const p = sanitize(id === 'la' ? data.progress : data.langs?.[id]);
+    if (p) out[id] = p;
+  }
+  return out;
 }
 
-async function upload(c: string, p: Progress): Promise<void> {
+async function upload(c: string, saves: Saves): Promise<void> {
+  const { la, ...langs } = saves;
   const r = await fetch(url(c), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ app: APP, saved: Date.now(), progress: p }),
+    body: JSON.stringify({ app: APP, saved: Date.now(), progress: la, langs }),
   });
   if (!r.ok) throw new Error(`cloud ${r.status}`);
 }
+
+/** This device's progress for every language. */
+const localSaves = (): Saves => Object.fromEntries(IDS.map((id) => [id, readStored(id)])) as Saves;
 
 let lastSynced = '';
 let running: Promise<void> | null = null;
@@ -73,11 +88,16 @@ export function syncNow(): Promise<void> {
     setStatus({ state: 'syncing', at: status.at });
     try {
       const remote = await download(c);
-      const local = getProgress();
-      const merged = remote && remote !== 'missing' ? mergeProgress(local, remote) : local;
-      if (JSON.stringify(merged) !== JSON.stringify(local)) replaceProgress(merged);
-      await upload(c, merged);
-      lastSynced = JSON.stringify(merged);
+      const saves = localSaves();
+      for (const id of IDS) {
+        const theirs = remote && remote !== 'missing' ? remote[id] : undefined;
+        if (!theirs) continue;
+        const merged = mergeProgress(saves[id], theirs);
+        if (JSON.stringify(merged) !== JSON.stringify(saves[id])) writeStored(id, merged);
+        saves[id] = merged;
+      }
+      await upload(c, saves);
+      lastSynced = JSON.stringify(getProgress());
       setStatus({ state: 'synced', at: Date.now() });
     } catch {
       setStatus({ state: 'offline', at: status.at });
@@ -104,7 +124,7 @@ export async function createCode(): Promise<string> {
     const digits = crypto.getRandomValues(new Uint32Array(3));
     const c = String(1 + (digits[0] % 9)) + String((digits[1] % 1e5) * 1e4 + (digits[2] % 1e4)).padStart(9, '0');
     if ((await download(c)) === 'missing') {
-      await upload(c, getProgress());
+      await upload(c, localSaves());
       remember(c);
       lastSynced = JSON.stringify(getProgress());
       setStatus({ state: 'synced', at: Date.now() });

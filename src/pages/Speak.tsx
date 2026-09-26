@@ -1,3 +1,4 @@
+import { L, LANG } from '../lang';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { headOf } from '../data/courses';
 import type { Course, VocabItem } from '../data/types';
@@ -179,7 +180,7 @@ export function Speak({ course }: { course: Course }) {
               const s = Math.round((best[k] ?? 0) * 100);
               return (
                 <li key={v.id}>
-                  <span lang="la" class="la">
+                  <span lang={L} class="la">
                     {headOf(v)}
                   </span>
                   <ProgressBar value={s} label={`${headOf(v)} score`} />
@@ -226,8 +227,8 @@ export function Speak({ course }: { course: Course }) {
       </div>
 
       <div class="speak-card" key={i}>
-        <p class="face-kicker">Say it in Latin</p>
-        <p class="speak-word" lang="la">
+        <p class="face-kicker">Say it in {LANG.language}</p>
+        <p class="speak-word" lang={L}>
           {target}
         </p>
         <Say text={target} />
@@ -305,7 +306,7 @@ export function Speak({ course }: { course: Course }) {
               </p>
               {attempt.heard !== undefined && (
                 <p class="heard">
-                  We heard: “<span lang="la">{attempt.heard}</span>”
+                  We heard: “<span lang={L}>{attempt.heard}</span>”
                 </p>
               )}
               <p class="muted small">{v.tip}</p>
@@ -335,8 +336,8 @@ export function Speak({ course }: { course: Course }) {
       </div>
       {mode === 'auto' && (
         <p class="fine-print">
-          Speech checking uses your browser’s recogniser, which may send audio to an online service. Browsers don’t understand Latin, so
-          we listen in Italian (the closest match) and compare the sounds rather than the spelling.
+          Speech checking uses your browser’s recogniser, which may send audio to an online service.
+          {LANG.id === 'la' ? ' Browsers don’t understand Latin, so we listen in Italian (the closest match) and compare the sounds rather than the spelling.' : ''}
         </p>
       )}
     </div>

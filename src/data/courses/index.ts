@@ -1,17 +1,21 @@
 import type { Challenge, Course, StepId, VocabItem } from '../types';
-import { colours } from './colours';
-import { numbers } from './numbers';
-import { greetings } from './greetings';
-import { questions } from './questions';
-import { family } from './family';
-import { actions } from './actions';
-import { time } from './time';
-import { places } from './places';
-import { argumentsCourse } from './arguments';
-import { food } from './food';
-import { body } from './body';
+import type { LangId } from '../../lang';
 
-export const COURSES: Course[] = [colours, numbers, greetings, questions, family, actions, time, places, argumentsCourse, food, body];
+/** Courses for the current language; filled by loadCourses() before the app renders. */
+export const COURSES: Course[] = [];
+
+const LOADERS: Record<LangId, () => Promise<Course[]>> = {
+  la: () => import('./la').then((m) => m.courses),
+  de: () => import('./de').then((m) => m.courses),
+  es: () => import('./es').then((m) => m.courses),
+  fr: () => import('./fr').then((m) => m.courses),
+};
+
+export async function loadCourses(id: LangId): Promise<Course[]> {
+  const list = await LOADERS[id]();
+  COURSES.splice(0, COURSES.length, ...list);
+  return list;
+}
 
 export const courseById = (id: string): Course | undefined => COURSES.find((c) => c.id === id);
 

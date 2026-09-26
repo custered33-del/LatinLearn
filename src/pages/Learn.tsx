@@ -6,6 +6,7 @@ import { actions, courseOf, useProgress } from '../lib/progress';
 import { ttsSupported } from '../lib/speech';
 import { navigate } from '../router';
 import { NextLink } from './Course';
+import { L } from '../lang';
 
 function VocabCard({ v, i }: { v: VocabItem; i: number }) {
   const head = headOf(v);
@@ -14,7 +15,7 @@ function VocabCard({ v, i }: { v: VocabItem; i: number }) {
       {v.swatch && <span class="swatch-bar" style={{ background: v.swatch }} aria-hidden="true" />}
       <div class="v-head">
         <div>
-          <h3 class="v-la" lang="la">
+          <h3 class="v-la" lang={L}>
             {head}
           </h3>
           <Say text={head} />
@@ -29,7 +30,7 @@ function VocabCard({ v, i }: { v: VocabItem; i: number }) {
       <p class="v-meta">
         <span class="tag">{v.pos}</span>
         {v.la !== head && (
-          <span class="v-dict" lang="la">
+          <span class="v-dict" lang={L}>
             {v.la}
           </span>
         )}
@@ -38,7 +39,7 @@ function VocabCard({ v, i }: { v: VocabItem; i: number }) {
       {v.ex && (
         <div class="v-ex">
           <p>
-            <span class="la" lang="la">
+            <span class="la" lang={L}>
               {v.ex[0]}
             </span>
             <AudioButton text={v.ex[0]} size="sm" />
@@ -81,14 +82,14 @@ export function Learn({ course }: { course: Course }) {
         <div class="sound-grid">
           {course.sounds.map((s) => (
             <div class="sound-card" key={s.sound}>
-              <span class="sound-glyph" lang="la">
+              <span class="sound-glyph" lang={L}>
                 {s.sound}
               </span>
               <p>{s.like}</p>
               <ul>
                 {s.words.map((w) => (
                   <li key={w}>
-                    <span class="la" lang="la">
+                    <span class="la" lang={L}>
                       {w}
                     </span>
                     <Say text={w} />

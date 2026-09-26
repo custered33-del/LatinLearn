@@ -3,6 +3,8 @@
  * learner-friendly respelling, TTS-friendly spelling and fuzzy phonetic matching.
  */
 
+import { LANG_ID } from '../lang';
+
 export const stripMacrons = (s: string): string =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').normalize('NFC');
 
@@ -12,6 +14,7 @@ export const fold = (s: string): string => stripMacrons(s).toLowerCase();
 /** Normalise a typed answer: fold, drop punctuation, collapse whitespace. */
 export const normalizeAnswer = (s: string): string =>
   fold(s)
+    .replace(/ß/g, 'ss')
     .replace(/[^a-z\s-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -243,6 +246,7 @@ export function toItalianSpelling(text: string): string {
 /** Collapse spelling differences that don't matter when comparing speech transcripts. */
 export function phoneticKey(text: string): string {
   let s = fold(text).replace(/[^a-z]/g, '');
+  if (LANG_ID !== 'la') return s.replace(/(.)+/g, '$1');
   s = s.replace(/ae/g, 'e').replace(/oe/g, 'e');
   s = s.replace(/ph/g, 'f').replace(/th/g, 't').replace(/ch/g, 'k').replace(/h/g, '');
   s = s.replace(/qu/g, 'k').replace(/[cq]/g, 'k');
@@ -276,6 +280,9 @@ export function speechSimilarity(heard: string, target: string): number {
 /**
  * Check a typed answer. Returns "exact", "typo" (one slip in a longer word) or "wrong".
  */
+const ARTICLE = /^(der|die|das|ein|eine|el|la|los|las|un|una|unos|unas|le|les|l|une|des|du) /;
+const dropArticle = (s: string) => s.replace(ARTICLE, '');
+
 export function checkTyped(input: string, accepted: string[]): 'exact' | 'typo' | 'wrong' {
   const got = normalizeAnswer(input);
   if (!got) return 'wrong';
@@ -283,6 +290,8 @@ export function checkTyped(input: string, accepted: string[]): 'exact' | 'typo' 
   for (const a of accepted) {
     const want = normalizeAnswer(a);
     if (got === want) return 'exact';
+    // German, Spanish and French: "Hund" is fine for "der Hund", "eau" for "l’eau".
+    if (LANG_ID !== 'la' && dropArticle(got) === dropArticle(want)) return 'exact';
     if (want.length >= 5 && levenshtein(got, want) === 1) best = 'typo';
   }
   return best;

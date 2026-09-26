@@ -15,6 +15,7 @@ import { Match } from './pages/Match';
 import { Quiz } from './pages/Quiz';
 import { Settings } from './pages/Settings';
 import { Speak } from './pages/Speak';
+import { L, LANG } from './lang';
 
 type StepProps = { course: Course; sub?: string };
 
@@ -48,9 +49,15 @@ function lazyPage<P>(load: () => Promise<(p: P) => JSX.Element>, loading: string
   };
 }
 
-const LazyReference = lazyPage<{ tab?: string }>(() => import('./pages/Reference').then((m) => m.Reference), 'Opening the Lexicon');
+const LazyReference = lazyPage<{ tab?: string }>(
+  () => (L === 'la' ? import('./pages/Reference').then((m) => m.Reference) : import('./pages/RefModern').then((m) => m.RefModern)),
+  'Opening the Lexicon',
+);
 const LazyChallenges = lazyPage<StepProps>(() => import('./pages/Challenges').then((m) => m.Challenges), 'Loading challenges');
-const LazyAuxilium = lazyPage<object>(() => import('./pages/Auxilium').then((m) => m.Auxilium), 'Waking up Auxilium');
+const LazyAuxilium = lazyPage<object>(
+  () => Promise.all([import('./pages/Auxilium'), import('./lib/auxilium').then((m) => m.ready)]).then(([m]) => m.Auxilium),
+  'Waking up Auxilium',
+);
 
 const STEP_PAGES: Record<StepId, (p: StepProps) => JSX.Element> = {
   learn: Learn,
@@ -67,7 +74,7 @@ function NotFound() {
     <div class="container empty-page">
       <p class="eyebrow">Error 404</p>
       <h1 class="display-sm">
-        <span lang="la">Ubi est?</span>
+        <span lang={L}>Ubi est?</span>
       </h1>
       <p class="muted">We couldn’t find that page. (That means “Where is it?”)</p>
       <a class="btn btn-primary" href={href()}>
@@ -140,7 +147,7 @@ export function App() {
       <Footer />
       {/* Floating helper, hidden inside drills and games where it could cover buttons. */}
       {section !== 'auxilium' && !step && (
-        <a class="aux-fab" href={href('auxilium')} aria-label="Ask Auxilium, your Latin practice buddy">
+        <a class="aux-fab" href={href('auxilium')} aria-label={`Ask Auxilium, your ${LANG.language} practice buddy`}>
           <Icon name="chat" size={22} />
           <span>Auxilium</span>
         </a>

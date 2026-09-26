@@ -15,6 +15,7 @@ import {
   type QuizQ,
   type Reply,
 } from '../lib/auxilium';
+import { LANG } from '../lang';
 import { MASTERED } from '../lib/mastery';
 import { getProgress } from '../lib/progress';
 import './auxilium.css';
@@ -46,8 +47,8 @@ export function Auxilium() {
   const [log, setLog] = useState<Msg[]>(() => [
     {
       who: 'aux',
-      text: '_Salvē!_ I’m **Auxilium**, your Latin practice buddy. I can quiz you, explain words, conjugate verbs and more. What shall we do?',
-      say: 'Salvē!',
+      text: `_${LANG.hello}_ I’m **Auxilium**, your ${LANG.language} practice buddy. I can quiz you, explain words, conjugate verbs and more. What shall we do?`,
+      say: LANG.hello,
       chips: START_CHIPS,
     },
   ]);
@@ -110,7 +111,7 @@ export function Auxilium() {
     if (quiz) {
       if (/^(stop|stop quiz|quit|end|exit|finish)\b/.test(low)) {
         setQuiz(null);
-        return add(me, { who: 'aux', text: `Quiz over. Best streak this time: **${streak}**. _Bene fēcistī!_ (Well done!)`, chips: START_CHIPS });
+        return add(me, { who: 'aux', text: `Quiz over. Best streak this time: **${streak}**. _${LANG.praise[0]}_ (Well done!)`, chips: START_CHIPS });
       }
       if (/^(skip|pass|i don.?t know|idk|\?)$/.test(low)) {
         const r = checkAnswer(quiz, '');
@@ -274,7 +275,7 @@ export function Auxilium() {
           </>
         ) : (
           <p class="muted small">
-            No local AI found{IS_PHONE ? ' (phones use the built-in tutor)' : ''}. To chat freely about Latin on your PC, install the free{' '}
+            No local AI found{IS_PHONE ? ' (phones use the built-in tutor)' : ''}. To chat freely about {LANG.language} on your PC, install the free{' '}
             <a href="https://ollama.com" target="_blank" rel="noreferrer">
               Ollama
             </a>{' '}

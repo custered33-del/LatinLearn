@@ -1,3 +1,4 @@
+import { L } from '../lang';
 import type { JSX } from 'preact';
 import { useMemo, useRef, useState } from 'preact/hooks';
 import { COURSES, headOf } from '../data/courses';
@@ -117,7 +118,7 @@ function WordsTab() {
           {results.slice(0, limit).map((e) => (
             <li class="lex-row" key={`${e.cat}|${e.la}|${e.en}`}>
               <div class="lex-main">
-                <span class="lex-la" lang="la">
+                <span class="lex-la" lang={L}>
                   {e.la}
                 </span>
                 <span class="lex-en">{e.en}</span>
@@ -187,7 +188,7 @@ function PronunciationLab() {
           value={text}
           onInput={(e) => setText((e.currentTarget as HTMLInputElement).value)}
           aria-label="Latin text to pronounce"
-          lang="la"
+          lang={L}
           spellcheck={false}
           autoCapitalize="off"
         />
@@ -202,7 +203,7 @@ function PronunciationLab() {
         ))}
         <span class="muted small">Try:</span>
         {LAB_SAMPLES.map((s) => (
-          <button type="button" key={s} class="filter-chip" onClick={() => setText(s)} lang="la">
+          <button type="button" key={s} class="filter-chip" onClick={() => setText(s)} lang={L}>
             {s}
           </button>
         ))}
@@ -215,7 +216,7 @@ function PronunciationLab() {
             const parts = respell(w).split('-');
             return (
               <div class="lab-word" key={i}>
-                <span class="la" lang="la">
+                <span class="la" lang={L}>
                   {w}
                 </span>
                 <span class="lab-syll" aria-label={respell(w)}>
@@ -271,7 +272,7 @@ function SoundsTab() {
               <p class="rule-ex">
                 {r.examples.map((w) => (
                   <span key={w} class="rule-word">
-                    <span class="la" lang="la">
+                    <span class="la" lang={L}>
                       {w}
                     </span>
                     <Say text={w} />
@@ -305,7 +306,7 @@ function NounsTab() {
               </h3>
               <p>{c.job}</p>
               <p class="case-ex">
-                <span class="la" lang="la">
+                <span class="la" lang={L}>
                   {c.ex[0]}
                 </span>
                 <span class="muted">{c.ex[1]}</span>
@@ -322,7 +323,7 @@ function NounsTab() {
             <article class="para" key={n.title}>
               <h3>{n.title}</h3>
               <p class="para-word">
-                <span class="la" lang="la">
+                <span class="la" lang={L}>
                   {n.word}
                 </span>{' '}
                 · {n.meaning}
@@ -408,7 +409,7 @@ function AdjectivesTab() {
           <article class="para" key={a.title}>
             <h3>{a.title}</h3>
             <p class="para-word">
-              <span class="la" lang="la">
+              <span class="la" lang={L}>
                 {a.word}
               </span>{' '}
               · {a.meaning}
@@ -440,7 +441,7 @@ function VerbsTab() {
       </p>
       <div class="chip-row" role="group" aria-label="Choose a verb">
         {VERBS.map((v) => (
-          <button type="button" key={v.id} class={cx('filter-chip', v.id === id && 'on')} aria-pressed={v.id === id} onClick={() => setId(v.id)} lang="la">
+          <button type="button" key={v.id} class={cx('filter-chip', v.id === id && 'on')} aria-pressed={v.id === id} onClick={() => setId(v.id)} lang={L}>
             {headword(v.parts)}
           </button>
         ))}
@@ -449,7 +450,7 @@ function VerbsTab() {
         <div class="verb-head">
           <div>
             <p class="eyebrow">{verb.group}</p>
-            <h3 class="la" lang="la">
+            <h3 class="la" lang={L}>
               {verb.parts}
             </h3>
             <p class="muted">{verb.meaning}</p>
@@ -457,13 +458,13 @@ function VerbsTab() {
           <dl class="verb-meta">
             <div>
               <dt>Infinitive</dt>
-              <dd class="la" lang="la">
+              <dd class="la" lang={L}>
                 {verb.inf}
               </dd>
             </div>
             <div>
               <dt>Commands</dt>
-              <dd class="la" lang="la">
+              <dd class="la" lang={L}>
                 {verb.imp[0]} / {verb.imp[1]}
               </dd>
             </div>
@@ -560,7 +561,7 @@ function Converter() {
             </div>
             <div class="conv-words">
               <span class="conv-label">In Latin</span>
-              <span class="conv-val la" lang="la">
+              <span class="conv-val la" lang={L}>
                 {words} <AudioButton text={words} size="sm" />
               </span>
             </div>
@@ -595,7 +596,7 @@ function NumberTable({ nums, caption }: { nums: number[]; caption: string }) {
             <tr key={n}>
               <th scope="row">{n}</th>
               <td class="numeral-cell">{toRoman(n)}</td>
-              <td class="la" lang="la">
+              <td class="la" lang={L}>
                 {toLatinWords(n)}
               </td>
               <td class="audio-cell">
@@ -636,7 +637,7 @@ function NumbersTab() {
           {ORDINALS.map(([n, w]) => (
             <div class="ordinal" key={n}>
               <span class="muted">{n}.</span>
-              <span class="la" lang="la">
+              <span class="la" lang={L}>
                 {w}
               </span>
             </div>

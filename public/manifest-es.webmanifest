@@ -1,0 +1,22 @@
+{
+  "name": "SpanishLearn",
+  "short_name": "SpanishLearn",
+  "description": "Learn Spanish through eleven short courses with games, challenges and a reference Lexicon.",
+  "start_url": "./?lang=es",
+  "display": "standalone",
+  "background_color": "#0d0c11",
+  "theme_color": "#c60b1e",
+  "icons": [
+    {
+      "src": "icon-es-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-es-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "id": "./?lang=es"
+}

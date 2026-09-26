@@ -156,3 +156,14 @@ export interface Course {
   challenges: Challenge[];
   tasks: SelfTask[];
 }
+
+/** Language-specific reference data: verb tables and number words. */
+export interface LangRef {
+  /** Number in words as written, 1–9999. */
+  numberWords: (n: number) => string;
+  /** The same number as recorded chunks for the voice (e.g. German "zweitausend sechsundzwanzig"). */
+  numberSpeech: (n: number) => string;
+  persons: string[];
+  tenses: { id: string; label: string }[];
+  verbs: { id: string; inf: string; meaning: string; forms: Record<string, string[]> }[];
+}

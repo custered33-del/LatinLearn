@@ -1,7 +1,9 @@
+import { L, LANG } from '../lang';
 import { useRef, useState } from 'preact/hooks';
 import { COURSES } from '../data/courses';
 import { cloudEnabled, createCode, formatCode, logIn, logOut, syncNow, useCloud } from '../lib/cloud';
 import { Icon } from '../components/Icon';
+import { LanguagePicker } from '../components/Layout';
 import { cx, useTitle } from '../lib/hooks';
 import { MASTERED } from '../lib/mastery';
 import { actions, dayKey, exportProgress, importProgress, useProgress } from '../lib/progress';
@@ -15,7 +17,7 @@ import {
   voiceCanSay,
 } from '../lib/speech';
 
-const TRY = ['Salvē! Quid agis?', 'ūnus, duo, trēs', 'vēnī, vīdī, vīcī'];
+const TRY = LANG.sample;
 
 function VoiceSection() {
   const audio = useAudioSettings();
@@ -32,15 +34,15 @@ function VoiceSection() {
           <input
             type="radio"
             name="voice"
-            aria-label="LatinLearn voice (recommended)"
+            aria-label={`${LANG.app} voice (recommended)`}
             checked={audio.voice === 'latin'}
             onChange={() => setAudioSettings({ voice: 'latin' })}
           />
           <span class="voice-title">
-            LatinLearn voice <span class="tag">Recommended</span>
+            {LANG.app} voice <span class="tag">Recommended</span>
           </span>
           <span class="voice-desc">
-            A natural neural voice recorded for every word and sentence in the app, in restored classical pronunciation. Free, open-source
+            A natural neural voice recorded for every word and sentence in the app, {LANG.voiceNote}. Free, open-source
             and it runs offline.
           </span>
           {ready && !latinOk && <span class="voice-warn">Voice files not found, so the browser voice is used for now.</span>}
@@ -49,11 +51,11 @@ function VoiceSection() {
           <input
             type="radio"
             name="voice"
-            aria-label="LatinLearn male voice"
+            aria-label={`${LANG.app} male voice`}
             checked={audio.voice === 'male'}
             onChange={() => setAudioSettings({ voice: 'male' })}
           />
-          <span class="voice-title">LatinLearn voice, male</span>
+          <span class="voice-title">{LANG.app} voice, male</span>
           <span class="voice-desc">The same classical pronunciation with a deeper male voice (slightly lower sound quality).</span>
         </label>
         <label class={cx('voice-option', audio.voice === 'browser' && 'on')}>
@@ -81,7 +83,7 @@ function VoiceSection() {
       <div class="try-row">
         <span class="muted small">Try it:</span>
         {TRY.map((t) => (
-          <button type="button" key={t} class="try-chip" lang="la" onClick={() => speak(t)}>
+          <button type="button" key={t} class="try-chip" lang={L} onClick={() => speak(t)}>
             <Icon name="volume" size={14} /> {t}
           </button>
         ))}
@@ -344,6 +346,20 @@ export function Settings() {
         <SaveSection />
         <OfflineSection />
       </div>
+      <SwitchLanguage />
     </div>
+  );
+}
+
+function SwitchLanguage() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" class="bored-btn" onClick={() => setOpen(true)}>
+        <span class="bored-flag" aria-hidden="true">{LANG.flag}</span>
+        Bored of {LANG.language}? Pick another!
+      </button>
+      {open && <LanguagePicker onClose={() => setOpen(false)} />}
+    </>
   );
 }

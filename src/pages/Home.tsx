@@ -8,6 +8,7 @@ import { courseStats, overallStats, suggestNext, type CourseStats } from '../lib
 import { toRoman } from '../lib/numerals';
 import { currentStreak, dayKey, useProgress } from '../lib/progress';
 import { href } from '../router';
+import { L, LANG } from '../lang';
 
 function Stat({ icon, value, label }: { icon: IconName; value: string | number; label: string }) {
   return (
@@ -30,7 +31,7 @@ export function CourseCard({ course, stats, i }: { course: Course; stats: Course
         <span class="cc-num" aria-hidden="true">
           {toRoman(course.n)}
         </span>
-        <span class="cc-la" lang="la">
+        <span class="cc-la" lang={L}>
           {course.la}
         </span>
         {stats.complete && (
@@ -56,7 +57,7 @@ export function CourseCard({ course, stats, i }: { course: Course; stats: Course
           ))}
         </div>
         <div class="cc-meta">
-          <span class="level-name" lang="la">
+          <span class="level-name" lang={L}>
             {stats.level.la}
           </span>
           <span>
@@ -76,30 +77,30 @@ function WordOfTheDay() {
   return (
     <div class="hero-art" style={courseStyle(c)}>
       <div class="floaters" aria-hidden="true">
-        <span class="floater f1" lang="la">
-          Salvē!
+        <span class="floater f1" lang={L}>
+          {LANG.floaters[0]}
         </span>
-        <span class="floater f2">XII</span>
-        <span class="floater f3" lang="la">
-          Quis?
+        <span class="floater f2">{LANG.floaters[1]}</span>
+        <span class="floater f3" lang={L}>
+          {LANG.floaters[2]}
         </span>
-        <span class="floater f4" lang="la">
-          caeruleus
+        <span class="floater f4" lang={L}>
+          {LANG.floaters[3]}
         </span>
       </div>
       <div class="wotd">
         <p class="wotd-label">
-          <span lang="la">Verbum diēī</span> · word of the day
+          <span lang={L}>{LANG.wordOfDay}</span> · word of the day
         </p>
         <div class="wotd-word">
-          <span lang="la">{head}</span>
+          <span lang={L}>{head}</span>
           <AudioButton text={head} size="lg" />
         </div>
         <Say text={head} />
         <p class="wotd-en">{v.en}</p>
         {v.ex && (
           <p class="wotd-ex">
-            <span lang="la">{v.ex[0]}</span>
+            <span lang={L}>{v.ex[0]}</span>
             <span>{v.ex[1]}</span>
           </p>
         )}
@@ -124,13 +125,13 @@ export function Home() {
       <section class="hero">
         <div class="hero-text">
           <p class="eyebrow">
-            <span lang="la">Salvē</span>. Welcome to LatinLearn
+            <span lang={L}>{LANG.hello.replace(/[!¡ ]/g, '')}</span>. Welcome to {LANG.app}
           </p>
           <h1 class="display">
-            Speak the language of <span class="grad">Rome</span>.
+            Speak the language of <span class="grad">{LANG.place}</span>.
           </h1>
           <p class="lede">
-            Eleven short courses, from colours to arguing like Cicero. Real Latin, classical pronunciation, and games that make it stick.
+            {LANG.lede}
           </p>
           <div class="hero-cta">
             <a class="btn btn-primary btn-lg" href={href('course', next.course.id, next.step)}>

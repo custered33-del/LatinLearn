@@ -24,9 +24,9 @@
   width: 60px;
   height: 60px;
   border-radius: 20px;
-  background: linear-gradient(135deg, #7c4dff, #ff4f79);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: #fff;
-  box-shadow: 0 12px 28px -14px #7c4dff;
+  box-shadow: 0 12px 28px -14px var(--accent);
 }
 
 .aux-chat {

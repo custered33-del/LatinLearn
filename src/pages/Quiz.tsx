@@ -12,10 +12,11 @@ import { buildQuiz, type Question } from '../lib/quiz';
 import { speak, ttsSupported } from '../lib/speech';
 import { href } from '../router';
 import { NextLink } from './Course';
+import { L, LANG } from '../lang';
 
 const KICKER: Record<string, string> = {
   'la-en': 'Translate',
-  'en-la': 'Into Latin',
+  'en-la': `Into ${LANG.language}`,
   listen: 'Listening',
   authored: 'Grammar & culture',
   type: 'Spelling',
@@ -148,7 +149,7 @@ export function Quiz({ course }: { course: Course }) {
                 {missed.map(({ mq }, k) => (
                   <li key={k}>
                     <span class="review-q">
-                      {mq.kind === 'type' ? `Latin for “${mq.english}”` : mq.latin && mq.mode === 'la-en' ? mq.latin : mq.prompt}
+                      {mq.kind === 'type' ? `${LANG.language} for “${mq.english}”` : mq.latin && mq.mode === 'la-en' ? mq.latin : mq.prompt}
                     </span>
                     <span class="review-a">
                       <Icon name="check" size={14} />
@@ -200,7 +201,7 @@ export function Quiz({ course }: { course: Course }) {
 
         {q.kind === 'choice' && q.mode === 'la-en' && q.latin && (
           <p class="q-latin">
-            <span lang="la">{q.latin}</span>
+            <span lang={L}>{q.latin}</span>
             <AudioButton text={q.latin} />
           </p>
         )}
@@ -256,12 +257,12 @@ export function Quiz({ course }: { course: Course }) {
               value={typed}
               onInput={(e) => setTyped((e.currentTarget as HTMLInputElement).value)}
               readOnly={answered}
-              placeholder="Type in Latin…"
-              aria-label={`Latin for ${q.english}`}
+              placeholder={`Type in ${LANG.language}…`}
+              aria-label={`${LANG.language} for ${q.english}`}
               autoComplete="off"
               autoCapitalize="off"
               spellcheck={false}
-              lang="la"
+              lang={L}
             />
             <div class="macron-row">
               <span class="muted small">Macrons optional:</span>
@@ -303,7 +304,7 @@ export function Quiz({ course }: { course: Course }) {
               {q.kind === 'choice' && q.why && <p class="muted">{q.why}</p>}
               {w && q.kind === 'choice' && (
                 <p class="muted">
-                  <span lang="la" class="la">
+                  <span lang={L} class="la">
                     {headOf(w)}
                   </span>{' '}
                   = {w.en}
