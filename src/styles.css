@@ -3191,7 +3191,8 @@ a.icon-btn {
   font: 600 24px/1.2 var(--font-display);
 }
 
-.settings-page .btn-row {
+.settings-page .btn-row,
+.aux-ai .btn-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -3278,4 +3279,29 @@ a.icon-btn {
   .footer {
     padding-bottom: 72px;
   }
+}
+
+.cloud-code {
+  font: 600 34px/1.1 var(--font-display);
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.cloud-login {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cloud-login input {
+  flex: 1 1 200px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line-2);
+  background: var(--card);
+  color: var(--ink);
+  font: 600 16px var(--font-ui);
+  letter-spacing: 0.04em;
 }

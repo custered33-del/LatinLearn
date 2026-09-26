@@ -41,7 +41,7 @@ const empty = (): Progress => ({ words: {}, courses: {}, challenges: {}, tasks: 
 const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
 
 /** Accept saved progress only if it has the right shape; fill in anything missing. */
-function sanitize(raw: unknown): Progress | null {
+export function sanitize(raw: unknown): Progress | null {
   if (!isObj(raw)) return null;
   const p = { ...empty(), ...raw } as Progress;
   if (!isObj(p.words) || !isObj(p.courses) || !isObj(p.challenges) || !isObj(p.tasks)) return null;
@@ -73,6 +73,55 @@ function commit(next: Progress): void {
     /* private mode: progress lasts for this session only */
   }
   notify();
+}
+
+/** Replace all progress (used by cloud sync). */
+export function replaceProgress(next: Progress): void {
+  commit(next);
+}
+
+/** Run `fn` after every progress change; returns an unsubscribe function. */
+export function subscribeProgress(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+const later = (a?: number, b?: number) => (a === undefined ? b : b === undefined ? a : Math.max(a, b));
+
+/** Combine two devices' progress, keeping the best of each. */
+export function mergeProgress(a: Progress, b: Progress): Progress {
+  const words = { ...a.words };
+  for (const [k, v] of Object.entries(b.words)) words[k] = Math.max(words[k] ?? 0, v);
+  const courses: Progress['courses'] = { ...a.courses };
+  for (const [id, cb] of Object.entries(b.courses) as [CourseId, CourseProgress][]) {
+    const ca = a.courses[id];
+    courses[id] = !ca
+      ? cb
+      : {
+          steps: { ...ca.steps, ...cb.steps },
+          bestQuiz: Math.max(ca.bestQuiz, cb.bestQuiz),
+          quizzes: Math.max(ca.quizzes, cb.quizzes),
+          bestMatch: ca.bestMatch === undefined ? cb.bestMatch : cb.bestMatch === undefined ? ca.bestMatch : Math.min(ca.bestMatch, cb.bestMatch),
+          bestSpeak: later(ca.bestSpeak, cb.bestSpeak),
+          perfectMatch: ca.perfectMatch || cb.perfectMatch || undefined,
+        };
+  }
+  const challenges = { ...a.challenges };
+  for (const [id, r] of Object.entries(b.challenges)) {
+    const o = challenges[id];
+    challenges[id] = o ? { stars: Math.max(o.stars, r.stars), best: Math.max(o.best, r.best), plays: Math.max(o.plays, r.plays) } : r;
+  }
+  const newer = b.lastDay > a.lastDay || (b.lastDay === a.lastDay && b.streak > a.streak) ? b : a;
+  return {
+    words,
+    courses,
+    challenges,
+    tasks: { ...a.tasks, ...b.tasks },
+    xp: Math.max(a.xp, b.xp),
+    streak: newer.streak,
+    lastDay: newer.lastDay,
+    last: a.last ?? b.last,
+  };
 }
 
 // Another tab saved: adopt its progress so neither tab overwrites the other.

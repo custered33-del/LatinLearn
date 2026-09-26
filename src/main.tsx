@@ -3,6 +3,7 @@ import './fonts.css';
 import './styles.css';
 import { App } from './app';
 import { loadVoice } from './lib/speech';
+import './lib/cloud';
 
 render(<App />, document.getElementById('app')!);
 

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'preact/hooks';
 import { COURSES } from '../data/courses';
+import { cloudEnabled, createCode, formatCode, logIn, logOut, syncNow, useCloud } from '../lib/cloud';
 import { Icon } from '../components/Icon';
 import { cx, useTitle } from '../lib/hooks';
 import { MASTERED } from '../lib/mastery';
@@ -85,6 +86,97 @@ function VoiceSection() {
           </button>
         ))}
       </div>
+    </section>
+  );
+}
+
+function CloudSection() {
+  const { code, status } = useCloud();
+  const [input, setInput] = useState('');
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      await fn();
+    } catch {
+      setMsg({ ok: false, text: 'Couldn’t reach the cloud. Check your internet and try again.' });
+    }
+    setBusy(false);
+  };
+
+  return (
+    <section class="panel settings-block" aria-labelledby="cloud-h">
+      <h2 id="cloud-h" class="h-sm">
+        <Icon name="upload" size={18} /> Log in with a code
+      </h2>
+      {!cloudEnabled ? (
+        <p class="muted">Cloud login isn’t switched on in this copy of LatinLearn yet. Save files (below) still work.</p>
+      ) : code ? (
+        <>
+          <p class="muted">Your login code. Type it on your phone (or any device) to get the same progress there:</p>
+          <p class="cloud-code">{formatCode(code)}</p>
+          <p class="muted small">
+            {status.state === 'syncing'
+              ? 'Syncing…'
+              : status.state === 'offline'
+                ? 'Offline: it will sync when you’re back online.'
+                : status.at
+                  ? `Synced at ${new Date(status.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
+                  : 'Syncs automatically.'}{' '}
+            Keep the code private: anyone with it can see and change this progress.
+          </p>
+          <div class="btn-row">
+            <button type="button" class="btn btn-ghost btn-sm" disabled={busy} onClick={() => void run(syncNow)}>
+              <Icon name="refresh" size={14} /> Sync now
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" onClick={logOut}>
+              Log out on this device
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p class="muted">Get a 10-digit code to keep your progress in sync between your PC and phone. No email or password needed.</p>
+          <div class="btn-row">
+            <button
+              type="button"
+              class="btn btn-primary"
+              disabled={busy}
+              onClick={() => void run(async () => void (await createCode()))}
+            >
+              <Icon name="sparkle" size={18} /> Create my code
+            </button>
+          </div>
+          <form
+            class="cloud-login"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void run(async () => {
+                const r = await logIn(input);
+                if (r === 'ok') setMsg({ ok: true, text: 'Logged in! Your progress is here now.' });
+                else if (r === 'wrong') setMsg({ ok: false, text: 'That code doesn’t match a save. Check the 10 digits.' });
+                else setMsg({ ok: false, text: 'Couldn’t reach the cloud. Check your internet and try again.' });
+              });
+            }}
+          >
+            <input
+              value={input}
+              onInput={(e) => setInput(e.currentTarget.value)}
+              inputMode="numeric"
+              placeholder="Already have a code? 123 456 7890"
+              aria-label="Your 10-digit login code"
+              autoComplete="off"
+            />
+            <button type="submit" class="btn btn-ghost" disabled={busy || input.replace(/\D/g, '').length !== 10}>
+              Log in
+            </button>
+          </form>
+        </>
+      )}
+      <div aria-live="polite">{msg && <p class={cx('save-msg', msg.ok ? 'good' : 'bad')}>{msg.text}</p>}</div>
     </section>
   );
 }
@@ -247,6 +339,7 @@ export function Settings() {
         <h1>Voice and saving</h1>
       </header>
       <div class="settings-grid">
+        <CloudSection />
         <VoiceSection />
         <SaveSection />
         <OfflineSection />

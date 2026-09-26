@@ -25,6 +25,7 @@ interface Msg extends Reply {
 }
 
 const AI_KEY = 'latinlearn:auxilium-ai';
+const IS_PHONE = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
 function progressReply(): Reply {
   const p = getProgress();
@@ -66,11 +67,18 @@ export function Auxilium() {
   const bottom = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
 
+  const [checking, setChecking] = useState(false);
+  const checkAi = async () => {
+    setChecking(true);
+    const m = await aiModels();
+    setModels(m);
+    setModel(m?.length ? pickModel(m) : undefined);
+    setChecking(false);
+  };
+  // The AI only ever runs on the learner's own computer, so phones don't look for it unless asked.
   useEffect(() => {
-    void aiModels().then((m) => {
-      setModels(m);
-      if (m?.length) setModel(pickModel(m));
-    });
+    if (IS_PHONE) setModels(null);
+    else void checkAi();
   }, []);
   useEffect(() => bottom.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), [log.length, busy]);
 
@@ -233,8 +241,18 @@ export function Auxilium() {
 
       <section class="panel aux-ai">
         <h2 class="h-sm">
-          <Icon name="sparkle" size={18} /> Local AI (optional)
+          <Icon name="sparkle" size={18} /> Local AI (PC only, optional)
         </h2>
+        <p class="muted small">
+          {aiReady
+            ? `Using ${model} on this computer.`
+            : 'Not connected, so Auxilium uses its built-in tutor (works everywhere, even offline).'}
+        </p>
+        <div class="btn-row">
+          <button type="button" class="btn btn-ghost btn-sm" onClick={() => void checkAi()} disabled={checking}>
+            <Icon name="refresh" size={14} /> {checking ? 'Checking…' : 'Check for local AI'}
+          </button>
+        </div>
         {models === undefined ? (
           <p class="muted">Looking for a local AI on this computer…</p>
         ) : models && models.length ? (
@@ -256,12 +274,12 @@ export function Auxilium() {
           </>
         ) : (
           <p class="muted small">
-            Everything above works without it. To chat freely about Latin on your PC, install the free{' '}
+            No local AI found{IS_PHONE ? ' (phones use the built-in tutor)' : ''}. To chat freely about Latin on your PC, install the free{' '}
             <a href="https://ollama.com" target="_blank" rel="noreferrer">
               Ollama
             </a>{' '}
             app, run <code>ollama pull qwen2.5:7b</code>, and (for the online version) double-click <b>Allow Auxilium AI.cmd</b> in the
-            LatinLearn folder once. Phones use the built-in tutor.
+            LatinLearn folder once.
           </p>
         )}
       </section>
