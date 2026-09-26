@@ -1,6 +1,6 @@
 # LatinLearn
 
-An interactive web app that teaches Latin to teenagers through nine self-contained courses, plus a searchable reference database, the **Lexicon**.
+An interactive web app that teaches Latin to teenagers through eleven self-contained courses, plus a searchable reference database, the **Lexicon**.
 
 | # | Course | Latin | What you learn |
 | --- | --- | --- | --- |
@@ -13,6 +13,26 @@ An interactive web app that teaches Latin to teenagers through nine self-contain
 | VII | Time | Tempus | days (planets and gods), months, time words |
 | VIII | Places | Loca | a Roman town, *ad* + acc. vs *in* + abl., *domī* |
 | IX | Arguments | Disputātiō | opinions, agreeing and disagreeing, reasons, linking words |
+| X | Food & Drink | Cibus et Pōtus | food, hungry/thirsty, ordering, the object ending |
+| XI | Body & Feelings | Corpus et Animus | body parts, what hurts, feelings that agree |
+
+## On your phone (online and offline)
+
+LatinLearn is hosted free on **GitHub Pages**: every push to `main` runs the tests, builds the site and publishes it (see `.github/workflows/deploy.yml`).
+
+- **Open it on your phone** at the site address, then *Share → Add to Home Screen* (iPhone) or *⋮ → Install app* (Android). It runs full-screen like an app.
+- **Offline:** a service worker (`public/sw.js`) keeps the app on the phone. In **Settings → Download for offline**, save the voice clips too before going somewhere with no signal.
+- **Update the phone from your PC:** double-click **`Publish to phone.cmd`**. It builds, commits and pushes; the phone gets the new version about 2 minutes later.
+- Progress is stored per device. Use a save file (Settings) to move it between PC and phone.
+
+## Auxilium, your practice buddy
+
+The chat button (bottom right) opens **Auxilium**. It works offline on any device:
+
+- "quiz me": questions on your weakest words that update your word strength and XP
+- "what does *amīcus* mean?", "how do you say happy?", "conjugate *videō*", "say 2026 in Latin"
+
+**Optional local AI:** on a PC with [Ollama](https://ollama.com) (for example `ollama pull qwen2.5:7b`), open questions go to the model running on that computer, which is free and private. For the online version, double-click **`Allow Auxilium AI.cmd`** once so Ollama accepts requests from the LatinLearn site.
 
 ## Play it
 
