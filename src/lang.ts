@@ -179,6 +179,16 @@ export function applyLanguage(): void {
     root.style.setProperty('--accent-soft', `color-mix(in srgb, ${LANG.accent[theme]} 16%, var(--card))`);
     root.style.setProperty('--accent-ink', theme ? '#0d0c11' : '#ffffff');
     root.style.setProperty('--grad', `linear-gradient(100deg, ${LANG.accent[theme]}, ${LANG.accent2})`);
+    // Page background glows in the flag's colours: [top right, left, bottom].
+    const glows: Record<Exclude<LangId, 'la'>, [string, string, string]> = {
+      de: ['221, 0, 0', '255, 206, 0', '221, 0, 0'],
+      es: ['198, 11, 30', '255, 196, 0', '198, 11, 30'],
+      fr: ['239, 65, 53', '0, 85, 164', theme ? '255, 255, 255' : '0, 85, 164'],
+    };
+    const [g1, g2, g3] = glows[LANG_ID];
+    root.style.setProperty('--glow-1', `rgba(${g1}, ${theme ? 0.22 : 0.16})`);
+    root.style.setProperty('--glow-2', `rgba(${g2}, ${theme ? 0.16 : 0.18})`);
+    root.style.setProperty('--glow-3', `rgba(${g3}, ${theme ? 0.08 : 0.1})`);
   }
   root.style.setProperty('--brand-bg', LANG.brandBg);
   document.title = LANG.app;
