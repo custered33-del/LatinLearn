@@ -1,0 +1,160 @@
+import type { Course } from '../types';
+
+export const food: Course = {
+  id: 'food',
+  n: 10,
+  title: 'Food & Drink',
+  la: 'Cibus et Pōtus',
+  tagline: 'Order, eat and say you’re hungry',
+  blurb: 'Name everyday food, say you’re hungry or thirsty, and order at a Roman snack bar. Along the way: the object ending you need for everything you eat.',
+  colors: ['#ca8a04', '#dc2626'],
+  sounds: [
+    { sound: 'c', like: 'always hard, like “k”: cibus is KI-bus, never “sibus”', words: ['cibus', 'cēna'] },
+    { sound: 'ū / u', like: 'long ū like “oo” in “moon”, short u like “put”', words: ['ūva', 'prandium'] },
+    { sound: 'double l', like: 'hold it for longer: mel, mellis', words: ['mel'] },
+    { sound: 'ē / ō', like: 'long vowels are held twice as long', words: ['ēsuriō', 'ōvum'] },
+  ],
+  ideas: [
+    {
+      title: 'The object ending: what you eat',
+      body: 'When you eat or drink something, it’s the **object**, so its ending changes (the accusative). Most words add **-m**: _aqua_ → _aquam_. Neuter words like _mālum_ don’t change.',
+      table: {
+        head: ['Food', 'On its own', 'Edō… / Bibō…'],
+        la: [1, 2],
+        rows: [
+          ['bread', 'pānis', 'pānem'],
+          ['water', 'aqua', 'aquam'],
+          ['cheese', 'caseus', 'caseum'],
+          ['fish', 'piscis', 'piscem'],
+          ['apple', 'mālum', 'mālum'],
+          ['milk', 'lac', 'lac'],
+        ],
+      },
+    },
+    {
+      title: 'A Roman dinner',
+      body: 'Romans ate a small breakfast (_ientāculum_), a quick lunch (_prandium_) and the big meal, _cēna_, in the late afternoon, lying on couches. A full _cēna_ went _ab ōvō usque ad māla_, “from the egg to the apples”: starters to dessert. It still means “from start to finish”.',
+    },
+    {
+      title: 'Hungry and thirsty',
+      body: '_Ēsuriō_ and _sitiō_ are verbs, so the ending shows who is hungry or thirsty.',
+      table: {
+        head: ['', 'hungry', 'thirsty'],
+        la: [1, 2],
+        rows: [
+          ['I', 'ēsuriō', 'sitiō'],
+          ['you', 'ēsuris', 'sitīs'],
+          ['he / she', 'ēsurit', 'sitit'],
+          ['we', 'ēsurīmus', 'sitīmus'],
+        ],
+      },
+    },
+  ],
+  vocab: [
+    { id: 'fo-cibus', la: 'cibus, -ī (m)', head: 'cibus', en: 'food', pos: 'noun', ex: ['Cibus bonus est.', 'The food is good.'] },
+    { id: 'fo-panis', la: 'pānis, pānis (m)', head: 'pānis', en: 'bread', pos: 'noun', ex: ['Pānem edō.', 'I eat bread.'] },
+    { id: 'fo-aqua', la: 'aqua, -ae (f)', head: 'aqua', en: 'water', pos: 'noun', ex: ['Aquam bibō.', 'I drink water.'] },
+    { id: 'fo-lac', la: 'lac, lactis (n)', head: 'lac', en: 'milk', pos: 'noun', note: 'Lactose and the Milky Way’s other name, the galaxy, share this idea.', ex: ['Lac album est.', 'Milk is white.'] },
+    { id: 'fo-malum', la: 'mālum, -ī (n)', head: 'mālum', en: 'apple', pos: 'noun', note: 'Careful: malum (short a) means “a bad thing”.', ex: ['Mālum rubrum edō.', 'I’m eating a red apple.'] },
+    { id: 'fo-ovum', la: 'ōvum, -ī (n)', head: 'ōvum', en: 'egg', pos: 'noun', note: 'Oval means egg-shaped.' },
+    { id: 'fo-caseus', la: 'caseus, -ī (m)', head: 'caseus', en: 'cheese', pos: 'noun', note: 'Cheese comes from caseus.', ex: ['Caseum amō.', 'I love cheese.'] },
+    { id: 'fo-mel', la: 'mel, mellis (n)', head: 'mel', en: 'honey', pos: 'noun', ex: ['Rōmānī mel amant.', 'Romans love honey.'] },
+    { id: 'fo-piscis', la: 'piscis, piscis (m)', head: 'piscis', en: 'fish', pos: 'noun', ex: ['Piscis in aquā natat.', 'The fish swims in the water.'] },
+    { id: 'fo-caro', la: 'carō, carnis (f)', head: 'carō', en: 'meat', pos: 'noun', note: 'Carnivore: a meat-eater.' },
+    { id: 'fo-uva', la: 'ūva, -ae (f)', head: 'ūva', en: 'grape', pos: 'noun' },
+    { id: 'fo-cena', la: 'cēna, -ae (f)', head: 'cēna', en: 'dinner', pos: 'noun', ex: ['Cēna parāta est!', 'Dinner is ready!'] },
+    { id: 'fo-prandium', la: 'prandium, -ī (n)', head: 'prandium', en: 'lunch', pos: 'noun' },
+    { id: 'fo-dulcis', la: 'dulcis, -e', head: 'dulcis', en: 'sweet', pos: 'adjective', ex: ['Mel dulce est.', 'Honey is sweet.'] },
+    { id: 'fo-esurio', la: 'ēsuriō, -īre', head: 'ēsuriō', en: 'I am hungry', pos: 'verb (4)', ex: ['Ēsuriō! Ubi est cibus?', 'I’m hungry! Where’s the food?'] },
+    { id: 'fo-sitio', la: 'sitiō, -īre', head: 'sitiō', en: 'I am thirsty', pos: 'verb (4)', ex: ['Sitiō. Aquam, quaesō!', 'I’m thirsty. Water, please!'] },
+    { id: 'fo-quid-edis', la: 'Quid edis?', en: 'What are you eating?', pos: 'phrase' },
+    { id: 'fo-sapit', la: 'Bene sapit!', en: 'It tastes good!', pos: 'phrase', note: 'Sapit = “it tastes”; homo sapiens is a “wise” (tasteful!) human.' },
+  ],
+  quiz: [
+    { q: 'What does “ab ōvō usque ad māla” mean?', options: ['from start to finish', 'from breakfast to lunch', 'eat your fruit', 'an apple a day'], why: 'A full Roman dinner ran from eggs (starters) to apples (dessert).' },
+    { q: 'How do you say “I eat bread”?', la: true, options: ['Pānem edō.', 'Pānis edō.', 'Pānem edit.', 'Pānis edit.'], why: 'Bread is the object, so pānem; -ō means “I”.' },
+    { q: 'What does “sitiō” mean?', options: ['I am thirsty', 'I am hungry', 'I sit', 'I am tired'], why: 'Sitiō = I’m thirsty; ēsuriō = I’m hungry.' },
+    { q: 'Which was the big Roman evening meal?', la: true, options: ['cēna', 'prandium', 'ientāculum', 'cibus'], why: 'Cēna was dinner; prandium was lunch.' },
+    { q: 'What is the Latin for honey?', la: true, options: ['mel', 'lac', 'ōvum', 'ūva'], why: 'mel = honey, lac = milk, ōvum = egg, ūva = grape.' },
+    { q: 'Which English word comes from “lac, lactis” (milk)?', options: ['lactose', 'lake', 'lack', 'lecture'], why: 'Lactose is the sugar found in milk.' },
+  ],
+  challenges: [
+    {
+      id: 'fo-snackbar',
+      type: 'dialogue',
+      title: 'At the snack bar',
+      desc: 'Order lunch from Felix at a Roman thermopolium.',
+      partner: { name: 'Fēlīx', icon: '🧑🏻‍🍳' },
+      turns: [
+        {
+          say: 'Salvē! Quid edere vīs?',
+          en: 'Hello! What do you want to eat?',
+          task: 'Order bread and cheese.',
+          options: [
+            { la: 'Pānem et caseum, quaesō.' },
+            { la: 'Pānis et caseus, quaesō.', fb: 'You want them, so they’re objects: pānem, caseum.' },
+            { la: 'Valē!', fb: 'That’s goodbye, and you haven’t eaten yet!' },
+          ],
+        },
+        {
+          say: 'Et quid bibere vīs?',
+          en: 'And what do you want to drink?',
+          task: 'Ask for water.',
+          options: [
+            { la: 'Aquam, quaesō.' },
+            { la: 'Aqua, quaesō.', fb: 'The thing you want is an object: aquam.' },
+            { la: 'Ēsuriō.', fb: 'That means “I’m hungry”. He asked what you want to drink.' },
+          ],
+        },
+        {
+          say: 'Ecce cibus! Placetne tibi?',
+          en: 'Here’s the food! Do you like it?',
+          task: 'Say it tastes good.',
+          options: [
+            { la: 'Bene sapit!' },
+            { la: 'Quid edis?', fb: 'That asks what he is eating.' },
+            { la: 'Sitiō.', fb: 'That means “I’m thirsty”. Tell him about the taste.' },
+          ],
+        },
+        {
+          say: 'Vīsne mālum quoque?',
+          en: 'Do you want an apple too?',
+          task: 'Say yes, a red one please.',
+          options: [
+            { la: 'Ita, mālum rubrum, quaesō.' },
+            { la: 'Ita, mālum rubra, quaesō.', fb: 'Mālum is neuter, so the colour is rubrum.' },
+            { la: 'Minimē, pānem edō.', fb: 'He asked about an apple. Say yes!' },
+          ],
+        },
+        {
+          say: 'Duo dēnāriī, quaesō.',
+          en: 'Two denarii, please.',
+          task: 'Thank him and say goodbye.',
+          options: [
+            { la: 'Grātiās! Valē!' },
+            { la: 'Salvē!', fb: 'That’s hello, and you’re leaving.' },
+            { la: 'Ēsuriō!', fb: 'Still hungry? Say thanks and goodbye.' },
+          ],
+        },
+      ],
+      outro: ['Valē! Redī crās!', 'Bye! Come back tomorrow!'],
+    },
+    {
+      id: 'fo-build',
+      type: 'builder',
+      title: 'Kitchen sentences',
+      desc: 'Build each food sentence from the tiles.',
+      items: [
+        { en: 'I eat bread.', answers: ['Pānem edō.', 'Edō pānem.'], extra: ['pānis', 'edit'] },
+        { en: 'I am thirsty.', answers: ['Sitiō.'], extra: ['ēsuriō', 'sitit'] },
+        { en: 'Honey is sweet.', answers: ['Mel dulce est.', 'Mel est dulce.', 'Dulce est mel.'], extra: ['dulcis', 'sunt'] },
+        { en: 'The fish swims in the water.', answers: ['Piscis in aquā natat.'], extra: ['aquam', 'piscem'] },
+        { en: 'We drink milk.', answers: ['Lac bibimus.', 'Bibimus lac.'], extra: ['bibunt', 'aquam'] },
+      ],
+    },
+  ],
+  tasks: [
+    { id: 'fo-t-shop', text: 'At the shops, name five things in your basket in Latin (pānis, lac, ōvum, mālum…).' },
+    { id: 'fo-t-dinner', text: 'Say “Ēsuriō!” before dinner and “Bene sapit!” after it, three days in a row.' },
+  ],
+};

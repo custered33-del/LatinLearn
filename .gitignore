@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-play
+# Voice model (downloaded by `npm run audio`) and its cache
+tts/
+*.log
+.DS_Store
+Play LatinLearn.html
+.claude/

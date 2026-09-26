@@ -1,0 +1,116 @@
+import type { Course } from '../types';
+
+export const colours: Course = {
+  id: 'colours',
+  n: 1,
+  title: 'Colours',
+  la: 'Colōrēs',
+  tagline: 'Paint the Roman world',
+  blurb: 'Fourteen colour words, the stories behind them, and how Latin adjectives change their endings to match what they describe.',
+  colors: ['#ff4f79', '#ff9f43'],
+  sounds: [
+    { sound: 'ae', like: 'rhymes with “eye”', words: ['caeruleus'] },
+    { sound: 'c', like: 'always hard, like “k”', words: ['croceus', 'cinereus'] },
+    { sound: 'v', like: 'like English “w”', words: ['viridis', 'flāvus'] },
+    { sound: 'g', like: 'always hard, as in “get”', words: ['argenteus', 'niger'] },
+  ],
+  ideas: [
+    {
+      title: 'Colours are adjectives, and they agree',
+      body: 'A Latin adjective changes its ending to match the gender of the noun it describes: **-us** for masculine, **-a** for feminine, **-um** for neuter. So: _equus albus_ (a white horse), _rosa rubra_ (a red rose), _caelum caeruleum_ (a blue sky).',
+      table: {
+        head: ['', 'Masculine', 'Feminine', 'Neuter'],
+        la: [1, 2, 3],
+        rows: [
+          ['Ending', '-us', '-a', '-um'],
+          ['Example', 'equus albus', 'rosa rubra', 'caelum caeruleum'],
+        ],
+      },
+    },
+    {
+      title: 'Three families of endings',
+      body: 'Most colours follow **-us, -a, -um** like _flāvus_. A few drop the -us in the masculine: _ruber, rubra, rubrum_. _Viridis_ belongs to a third family with one form for masculine and feminine and another for neuter.',
+      table: {
+        head: ['', 'Masc.', 'Fem.', 'Neut.'],
+        la: [1, 2, 3],
+        rows: [
+          ['yellow', 'flāvus', 'flāva', 'flāvum'],
+          ['red', 'ruber', 'rubra', 'rubrum'],
+          ['black', 'niger', 'nigra', 'nigrum'],
+          ['green', 'viridis', 'viridis', 'viride'],
+        ],
+      },
+    },
+    {
+      title: 'Word order',
+      body: 'Adjectives usually come **after** the noun: _vīnum rubrum_ = red wine. To say something **is** a colour, put _est_ at the end: _Rosa rubra est._ = The rose is red.',
+    },
+    {
+      title: 'More than one',
+      body: 'In the plural the endings become **-ī, -ae, -a**: _equī albī_ (white horses), _rosae rubrae_ (red roses), _dōna aurea_ (golden gifts).',
+    },
+  ],
+  vocab: [
+    { id: 'co-color', la: 'color, colōris (m)', head: 'color', en: 'colour', pos: 'noun', ex: ['Quī color tibi placet?', 'Which colour do you like?'] },
+    { id: 'co-ruber', la: 'ruber, rubra, rubrum', head: 'ruber', en: 'red', pos: 'adjective', swatch: '#d62839', note: 'Rubies and the word “rubric” (instructions once written in red ink) come from here.', ex: ['Rosa rubra est.', 'The rose is red.'] },
+    { id: 'co-caeruleus', la: 'caeruleus, -a, -um', head: 'caeruleus', en: 'blue', pos: 'adjective', swatch: '#2f7ddf', note: 'Sky-blue or sea-blue: the colour of the Mediterranean.', ex: ['Caelum caeruleum est.', 'The sky is blue.'] },
+    { id: 'co-viridis', la: 'viridis, viride', head: 'viridis', en: 'green', pos: 'adjective', swatch: '#2e9d58', note: 'One form for masculine and feminine (viridis), one for neuter (viride).', ex: ['Herba viridis est.', 'The grass is green.'] },
+    { id: 'co-flavus', la: 'flāvus, -a, -um', head: 'flāvus', en: 'yellow', pos: 'adjective', swatch: '#f2c230', note: 'Also means blond when describing hair.', ex: ['Capillī Iūliae flāvī sunt.', 'Julia’s hair is blond.'] },
+    { id: 'co-niger', la: 'niger, nigra, nigrum', head: 'niger', en: 'black', pos: 'adjective', swatch: '#1b1b1f', note: 'Shiny black. For dull, gloomy black the Romans used āter.', ex: ['Corvus niger est.', 'The raven is black.'] },
+    { id: 'co-albus', la: 'albus, -a, -um', head: 'albus', en: 'white', pos: 'adjective', swatch: '#f4f1ea', note: 'Dull white. Dazzling white is candidus: Roman election hopefuls wore brightened togas, which is where “candidate” comes from.', ex: ['Nix alba est.', 'Snow is white.'] },
+    { id: 'co-purpureus', la: 'purpureus, -a, -um', head: 'purpureus', en: 'purple', pos: 'adjective', swatch: '#7b3fb7', note: 'Purple dye was made from sea snails and cost a fortune, so it became the colour of emperors.', ex: ['Imperātor togam purpuream gerit.', 'The emperor wears a purple toga.'] },
+    { id: 'co-roseus', la: 'roseus, -a, -um', head: 'roseus', en: 'pink', pos: 'adjective', swatch: '#f47fb0', note: 'Literally “rosy”, from rosa (rose).', ex: ['Flōrēs roseī sunt.', 'The flowers are pink.'] },
+    { id: 'co-croceus', la: 'croceus, -a, -um', head: 'croceus', en: 'orange', pos: 'adjective', swatch: '#f28c28', note: 'Literally “saffron-coloured”. Romans had never seen an orange (the fruit).', ex: ['Flamma crocea est.', 'The flame is orange.'] },
+    { id: 'co-fuscus', la: 'fuscus, -a, -um', head: 'fuscus', en: 'brown', pos: 'adjective', swatch: '#7a4b2a', note: 'Also means dark or dusky.', ex: ['Oculī meī fuscī sunt.', 'My eyes are brown.'] },
+    { id: 'co-cinereus', la: 'cinereus, -a, -um', head: 'cinereus', en: 'grey', pos: 'adjective', swatch: '#8f9197', note: 'Literally “ash-coloured”, from cinis (ash).', ex: ['Fēlēs cinerea dormit.', 'The grey cat is sleeping.'] },
+    { id: 'co-aureus', la: 'aureus, -a, -um', head: 'aureus', en: 'golden', pos: 'adjective', swatch: '#d4a72c', note: 'From aurum (gold), which is why gold’s chemical symbol is Au.', ex: ['Corōna aurea est.', 'The crown is golden.'] },
+    { id: 'co-argenteus', la: 'argenteus, -a, -um', head: 'argenteus', en: 'silver', pos: 'adjective', swatch: '#c3c7cd', note: 'From argentum (silver): chemical symbol Ag.', ex: ['Lūna argentea lūcet.', 'The silver moon shines.'] },
+    { id: 'co-quo', la: 'Quō colōre est?', en: 'What colour is it?', pos: 'phrase', match: 'What colour is it?', ex: ['Quō colōre est equus? Albus est.', 'What colour is the horse? It’s white.'] },
+  ],
+  quiz: [
+    { q: 'Rosa is feminine. Which word completes “Rosa ___ est.”?', la: true, options: ['rubra', 'ruber', 'rubrum', 'rubrī'], why: 'Feminine nouns take the -a ending, so the adjective is rubra.' },
+    { q: 'Caelum (sky) is neuter. Which word completes “Caelum ___ est.”?', la: true, options: ['caeruleum', 'caeruleus', 'caerulea', 'caeruleī'], why: 'Neuter nouns take the -um ending.' },
+    { q: 'Which colour word also means “blond” when describing hair?', la: true, options: ['flāvus', 'albus', 'croceus', 'aureus'], why: 'Flāvus is golden-yellow, the colour of blond hair.' },
+    { q: 'In “caeruleus”, the letters “ae” sound like…', options: ['“eye”', '“ee”', '“ay”', '“ah”'], why: 'ae is a diphthong that rhymes with “eye”: kai-RU-leh-us.' },
+    { q: 'What does “Corvus niger est” mean?', options: ['The raven is black.', 'The raven is white.', 'The crow is grey.', 'The black cat is sleeping.'], why: 'corvus = raven, niger = black, est = is.' },
+    { q: 'Which English word comes from the dazzling white togas worn by Romans running for office?', options: ['candidate', 'champion', 'senator', 'celebrity'], why: 'Candidus means bright white; a candidātus wore a whitened toga.' },
+  ],
+  challenges: [
+    {
+      id: 'co-paint',
+      type: 'paint',
+      title: 'Paint by Latin',
+      desc: 'Read each Latin sentence and paint the picture in the right colours.',
+      prompts: [
+        { region: 'sky', la: 'Caelum caeruleum est.', en: 'The sky is blue.', color: 'co-caeruleus' },
+        { region: 'sun', la: 'Sōl flāvus est.', en: 'The sun is yellow.', color: 'co-flavus' },
+        { region: 'grass', la: 'Herba viridis est.', en: 'The grass is green.', color: 'co-viridis' },
+        { region: 'house', la: 'Domus alba est.', en: 'The house is white.', color: 'co-albus' },
+        { region: 'roof', la: 'Tēctum rubrum est.', en: 'The roof is red.', color: 'co-ruber' },
+        { region: 'door', la: 'Iānua fusca est.', en: 'The door is brown.', color: 'co-fuscus' },
+        { region: 'cloud', la: 'Nūbēs cinerea est.', en: 'The cloud is grey.', color: 'co-cinereus' },
+        { region: 'flower', la: 'Flōs purpureus est.', en: 'The flower is purple.', color: 'co-purpureus' },
+      ],
+    },
+    {
+      id: 'co-agree',
+      type: 'gapfill',
+      title: 'Make it agree',
+      desc: 'Pick the ending that matches each noun: masculine -us, feminine -a, neuter -um.',
+      items: [
+        { la: 'Rosa ___ est.', en: 'The rose is red.', options: ['rubra', 'ruber', 'rubrum'], why: 'Rosa is feminine, so: rubra.' },
+        { la: 'Equus ___ est.', en: 'The horse is black.', options: ['niger', 'nigra', 'nigrum'], why: 'Equus is masculine, so: niger.' },
+        { la: 'Caelum ___ est.', en: 'The sky is blue.', options: ['caeruleum', 'caeruleus', 'caerulea'], why: 'Caelum is neuter, so: caeruleum.' },
+        { la: 'Vīnum ___ est.', en: 'The wine is white.', options: ['album', 'albus', 'alba'], why: 'Vīnum is neuter, so: album.' },
+        { la: 'Toga ___ est.', en: 'The toga is purple.', options: ['purpurea', 'purpureus', 'purpureum'], why: 'Toga is feminine, so: purpurea.' },
+        { la: 'Herba ___ est.', en: 'The grass is green.', options: ['viridis', 'viride', 'viridēs'], why: 'Viridis covers masculine and feminine; viride is neuter and viridēs is plural.' },
+        { la: 'Capillī ___ sunt.', en: 'The hair is blond.', options: ['flāvī', 'flāvus', 'flāva'], why: 'Capillī is masculine plural, so: flāvī.' },
+        { la: 'Corōnae ___ sunt.', en: 'The crowns are golden.', options: ['aureae', 'aurea', 'aureī'], why: 'Corōnae is feminine plural, so: aureae.' },
+      ],
+    },
+  ],
+  tasks: [
+    { id: 'co-t-labels', text: 'Label five things in your room with sticky notes that give their colour in Latin (e.g. “liber ruber”).' },
+    { id: 'co-t-outfit', text: 'Describe the colours of what you’re wearing today in Latin, out loud.' },
+  ],
+};

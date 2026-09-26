@@ -1,0 +1,31 @@
+{
+  "name": "latinlearn",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Interactive Latin learning platform for teens: eleven courses, drills, challenges, quizzes, a reference database and a local neural Latin voice.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run audio && npm run build:web && npm run build:play",
+    "build:web": "tsc --noEmit && vite build",
+    "audio": "node scripts/make-audio.mjs && node scripts/make-audio.mjs --male",
+    "build:play": "vite build --mode play && node scripts/make-play-file.mjs",
+    "icons": "node scripts/make-icon.mjs",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/fraunces": "^5.3.0",
+    "preact": "^10.29.8"
+  },
+  "devDependencies": {
+    "@breezystack/lamejs": "^1.2.7",
+    "@preact/preset-vite": "^2.10.6",
+    "onnxruntime-node": "^1.30.0",
+    "typescript": "^7.0.2",
+    "vite": "^6.4.3",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^4.1.11"
+  }
+}

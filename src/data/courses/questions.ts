@@ -1,0 +1,110 @@
+import type { Course } from '../types';
+
+export const questions: Course = {
+  id: 'questions',
+  n: 4,
+  title: 'Questions',
+  la: 'Interrogātiōnēs',
+  tagline: 'Who, what, where, why?',
+  blurb: 'Ask who, what, where, when and why, build yes/no questions with a two-letter trick, and steer the answer you want to hear.',
+  colors: ['#12b886', '#8ce99a'],
+  sounds: [
+    { sound: 'qu', like: 'like “kw”', words: ['Quis', 'Quandō'] },
+    { sound: 'c', like: 'always “k”', words: ['Cūr'] },
+    { sound: 'ō', like: 'long “oh”', words: ['Quōmodo', 'Quō'] },
+    { sound: 'u', like: 'short, as in “put”', words: ['Ubi', 'Unde'] },
+  ],
+  ideas: [
+    {
+      title: 'Question words go first',
+      body: 'Just like English, put the question word at the start: _Ubi est Marcus?_ (Where is Marcus?) _Cūr rīdēs?_ (Why are you laughing?)',
+    },
+    {
+      title: 'Yes/no questions with -ne',
+      body: 'Latin has no “do” or “does”. Instead, stick **-ne** onto the first word (usually the verb): _Vidēs canem._ (You see the dog.) → _Vidēsne canem?_ (Do you see the dog?)',
+    },
+    {
+      title: 'Loaded questions',
+      body: 'Want to steer the answer? _Nōnne_ expects “yes”; _num_ expects “no”.',
+      table: {
+        head: ['Latin', 'Expects', 'Meaning'],
+        la: [0],
+        rows: [
+          ['Laetusne es?', 'either', 'Are you happy?'],
+          ['Nōnne laetus es?', 'yes', 'You’re happy, aren’t you?'],
+          ['Num laetus es?', 'no', 'Surely you’re not happy?'],
+        ],
+      },
+    },
+    {
+      title: 'Saying yes and no',
+      body: 'Latin has no single word for “yes”. The most natural answer repeats the verb: _Vidēsne?_ → _Videō._ (Yes, I see.) or _Nōn videō._ (No.) You can also use _ita_, _ita vērō_ or _sīc_ for yes and _minimē_ for no.',
+    },
+    {
+      title: 'Who vs what',
+      body: '_Quis_ asks about people; _quid_ asks about things. _Quis est?_ = Who is it? _Quid est?_ = What is it?',
+    },
+  ],
+  vocab: [
+    { id: 'qu-quis', la: 'Quis?', en: 'Who?', pos: 'question word', note: 'Asking about several people? Use quī?', ex: ['Quis es?', 'Who are you?'] },
+    { id: 'qu-quid', la: 'Quid?', en: 'What?', pos: 'question word', ex: ['Quid est?', 'What is it?'] },
+    { id: 'qu-ubi', la: 'Ubi?', en: 'Where?', pos: 'question word', ex: ['Ubi est Marcus?', 'Where is Marcus?'] },
+    { id: 'qu-unde', la: 'Unde?', en: 'Where from?', pos: 'question word', ex: ['Unde venīs?', 'Where are you from?'] },
+    { id: 'qu-quo', la: 'Quō?', en: 'Where to?', pos: 'question word', ex: ['Quō īs?', 'Where are you going?'] },
+    { id: 'qu-quando', la: 'Quandō?', en: 'When?', pos: 'question word', ex: ['Quandō venīs?', 'When are you coming?'] },
+    { id: 'qu-cur', la: 'Cūr?', en: 'Why?', pos: 'question word', ex: ['Cūr rīdēs?', 'Why are you laughing?'] },
+    { id: 'qu-quomodo', la: 'Quōmodo?', en: 'How?', pos: 'question word', ex: ['Quōmodo hoc facis?', 'How do you do this?'] },
+    { id: 'qu-quot', la: 'Quot?', en: 'How many?', pos: 'question word', ex: ['Quot frātrēs habēs?', 'How many brothers do you have?'] },
+    { id: 'qu-qualis', la: 'Quālis, quāle?', head: 'Quālis?', en: 'What kind of? / What … like?', match: 'What kind of?', pos: 'question word', ex: ['Quālis est canis tuus?', 'What is your dog like?'] },
+    { id: 'qu-quantus', la: 'Quantus, -a, -um?', head: 'Quantus?', en: 'How big? / How much?', match: 'How big?', pos: 'question word', ex: ['Quanta est domus?', 'How big is the house?'] },
+    { id: 'qu-ne', la: '-ne', en: 'turns a sentence into a yes/no question', match: 'makes a yes/no question', pos: 'suffix', note: 'Attach it to the first word of the sentence.', ex: ['Estne Marcus laetus?', 'Is Marcus happy?'] },
+    { id: 'qu-nonne', la: 'Nōnne …?', head: 'Nōnne', en: '…, isn’t it? (expects “yes”)', match: 'expects “yes”', pos: 'question word', ex: ['Nōnne Rōma pulchra est?', 'Rome is beautiful, isn’t it?'] },
+    { id: 'qu-num', la: 'Num …?', head: 'Num', en: 'Surely … not? (expects “no”)', match: 'expects “no”', pos: 'question word', ex: ['Num fessus es?', 'Surely you’re not tired?'] },
+    { id: 'qu-ita', la: 'Ita vērō.', en: 'Yes, indeed.', pos: 'reply', note: 'Ita or sīc on their own also mean yes.' },
+    { id: 'qu-minime', la: 'Minimē.', en: 'No. / Not at all.', match: 'No, not at all.', pos: 'reply' },
+    { id: 'qu-age', la: 'Quot annōs nātus / nāta es?', head: 'Quot annōs nātus es?', en: 'How old are you?', pos: 'phrase', note: 'Say nātus to a boy and nāta to a girl. Reply: Trēdecim annōs nātus / nāta sum, “I’m 13.”' },
+  ],
+  quiz: [
+    { q: 'Which word asks “why?”', la: true, options: ['Cūr?', 'Quis?', 'Ubi?', 'Quot?'], why: 'Cūr = why.' },
+    { q: '“Nōnne fessus es?” expects the answer…', options: ['Yes', 'No', 'Either', 'It isn’t a question'], why: 'Nōnne introduces a question that expects “yes”.' },
+    { q: 'How do you turn “Marcus est laetus” into a yes/no question?', la: true, options: ['Estne Marcus laetus?', 'Ne est Marcus laetus?', 'Est Marcus laetusne?', 'Quis est Marcus laetus?'], why: 'Attach -ne to the first word of the sentence.' },
+    { q: '“Quot annōs nāta es?” asks…', options: ['How old are you? (to a girl)', 'How old are you? (to a boy)', 'When were you born?', 'How many sisters do you have?'], why: 'Nāta is the feminine form; use nātus for a boy.' },
+    { q: 'A friend asks “Vidēsne canem?” and you can see it. The most natural “yes” is…', la: true, options: ['Videō.', 'Minimē.', 'Nōn videō.', 'Quid?'], why: 'Romans usually answered by repeating the verb: videō = I see.' },
+    { q: 'You want to know where someone is going. You ask…', la: true, options: ['Quō īs?', 'Unde venīs?', 'Ubi es?', 'Quis es?'], why: 'Quō = where to; īs = you go.' },
+  ],
+  challenges: [
+    {
+      id: 'qu-detective',
+      type: 'gapfill',
+      title: 'Question detective',
+      desc: 'You can see the answer. Work out which question word was asked.',
+      items: [
+        { la: '___ est Marcus? — In forō est.', en: 'Where is Marcus? — He’s in the forum.', options: ['Ubi', 'Quis', 'Quandō', 'Cūr'] },
+        { la: '___ venīs? — Crās veniō.', en: 'When are you coming? — I’m coming tomorrow.', options: ['Quandō', 'Unde', 'Quō', 'Quis'] },
+        { la: '___ rīdēs? — Quod laetus sum.', en: 'Why are you laughing? — Because I’m happy.', options: ['Cūr', 'Ubi', 'Quot', 'Quōmodo'] },
+        { la: '___ es? — Sum Iūlia.', en: 'Who are you? — I’m Julia.', options: ['Quis', 'Quid', 'Ubi', 'Quot'] },
+        { la: '___ frātrēs habēs? — Duōs habeō.', en: 'How many brothers do you have? — I have two.', options: ['Quot', 'Quis', 'Quantus', 'Cūr'] },
+        { la: '___ īs? — Ad forum eō.', en: 'Where are you going? — I’m going to the forum.', options: ['Quō', 'Unde', 'Ubi', 'Quandō'] },
+        { la: '___ venīs? — Ex Ītaliā veniō.', en: 'Where are you from? — I come from Italy.', options: ['Unde', 'Quō', 'Quandō', 'Quid'] },
+        { la: '___ est? — Liber est.', en: 'What is it? — It’s a book.', options: ['Quid', 'Quis', 'Quot', 'Ubi'] },
+      ],
+    },
+    {
+      id: 'qu-build',
+      type: 'builder',
+      title: 'Ask away',
+      desc: 'Build each question from the tiles. Remember: question words first, and -ne sticks to the first word.',
+      items: [
+        { en: 'Where is the dog?', answers: ['Ubi est canis?', 'Ubi canis est?'], extra: ['quis', 'canem'] },
+        { en: 'Do you see the horse?', answers: ['Vidēsne equum?'], extra: ['vidēs', 'equus', 'num'] },
+        { en: 'Why are you laughing?', answers: ['Cūr rīdēs?'], extra: ['rīdet', 'quid'] },
+        { en: 'How old are you? (to a girl)', answers: ['Quot annōs nāta es?'], extra: ['nātus', 'quis'] },
+        { en: 'You’re tired, aren’t you?', answers: ['Nōnne fessus es?'], extra: ['num', 'sum'] },
+      ],
+    },
+  ],
+  tasks: [
+    { id: 'qu-t-interview', text: 'Interview a friend or family member with five Latin questions (Quis es? Quot annōs nātus/nāta es? …).' },
+    { id: 'qu-t-yes', text: 'For one hour, answer yes/no questions the Roman way: repeat the verb or say “Minimē”.' },
+  ],
+};

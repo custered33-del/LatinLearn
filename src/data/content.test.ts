@@ -1,0 +1,151 @@
+import { describe, expect, it } from 'vitest';
+import { COURSES, challengesOf, headOf } from './courses';
+import { ADJECTIVES, LEXICON, NOUNS, VERBS } from './reference';
+import { audioId, audioKey } from '../lib/audio-key';
+import { toPhonemes } from '../lib/latin';
+import audioIndex from './audio-index.json';
+import { speakablePhrases, speakableWords } from './speakable';
+
+describe('course content', () => {
+  it('has eleven courses numbered in order', () => {
+    expect(COURSES.map((c) => c.n)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  });
+
+  it('uses unique vocab ids across all courses', () => {
+    const ids = COURSES.flatMap((c) => c.vocab.map((v) => v.id));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it.each(COURSES.map((c) => [c.id, c] as const))('%s is complete and consistent', (_id, c) => {
+    expect(c.vocab.length).toBeGreaterThanOrEqual(12);
+    expect(c.quiz.length).toBeGreaterThanOrEqual(5);
+    expect(c.sounds.length).toBeGreaterThan(0);
+    expect(c.ideas.length).toBeGreaterThan(0);
+
+    // Drill answers and match labels must be unambiguous within a course.
+    const heads = c.vocab.map(headOf);
+    expect(new Set(heads).size).toBe(heads.length);
+    const labels = c.vocab.map((v) => v.match ?? v.en);
+    expect(new Set(labels).size).toBe(labels.length);
+
+    for (const q of c.quiz) {
+      expect(q.options).toHaveLength(4);
+      expect(new Set(q.options).size).toBe(4);
+    }
+    for (const idea of c.ideas) {
+      for (const row of idea.table?.rows ?? []) expect(row).toHaveLength(idea.table!.head.length);
+    }
+  });
+});
+
+describe('challenges and tasks', () => {
+  const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const words = (s: string) => fold(s).replace(/[.,!?;:—…]/g, ' ').split(/\s+/).filter(Boolean);
+
+  it('uses globally unique challenge and task ids', () => {
+    const ids = COURSES.flatMap((c) => challengesOf(c).map((ch) => ch.id));
+    expect(new Set(ids).size).toBe(ids.length);
+    const tasks = COURSES.flatMap((c) => c.tasks.map((t) => t.id));
+    expect(new Set(tasks).size).toBe(tasks.length);
+  });
+
+  it.each(COURSES.map((c) => [c.id, c] as const))('%s has valid challenges', (_id, course) => {
+    expect(course.challenges.length).toBeGreaterThanOrEqual(2);
+    expect(course.tasks.length).toBeGreaterThanOrEqual(2);
+
+    for (const ch of course.challenges) {
+      switch (ch.type) {
+        case 'gapfill':
+          for (const it of ch.items) {
+            expect(it.la.split('___')).toHaveLength(2);
+            expect(it.options.length).toBeGreaterThanOrEqual(3);
+            expect(new Set(it.options).size).toBe(it.options.length);
+          }
+          break;
+        case 'builder':
+          for (const it of ch.items) {
+            const tiles = [...words(it.answers[0]), ...it.extra.map(fold)];
+            // Decoys must differ from the real words, or the puzzle becomes ambiguous.
+            for (const e of it.extra) expect(words(it.answers[0])).not.toContain(fold(e));
+            // Every accepted answer must be buildable from the tiles on offer.
+            for (const a of it.answers) {
+              const pool = [...tiles];
+              for (const w of words(a)) {
+                const k = pool.indexOf(w);
+                expect(k, `"${w}" in "${a}"`).toBeGreaterThanOrEqual(0);
+                pool.splice(k, 1);
+              }
+            }
+          }
+          break;
+        case 'dialogue':
+          for (const turn of ch.turns) {
+            expect(turn.options.length).toBeGreaterThanOrEqual(2);
+            expect(new Set(turn.options.map((o) => o.la)).size).toBe(turn.options.length);
+            for (const wrong of turn.options.slice(1)) expect(wrong.fb).toBeTruthy();
+          }
+          break;
+        case 'spot': {
+          const ids = new Set(ch.places.map((p) => p.id));
+          const cells = ch.places.map((p) => `${p.row}:${p.col}`);
+          expect(new Set(cells).size).toBe(cells.length);
+          for (const pr of ch.prompts) expect(ids.has(pr.target)).toBe(true);
+          break;
+        }
+        case 'paint': {
+          const swatches = new Set(course.vocab.filter((v) => v.swatch).map((v) => v.id));
+          for (const pr of ch.prompts) expect(swatches.has(pr.color)).toBe(true);
+          const regions = ch.prompts.map((pr) => pr.region);
+          expect(new Set(regions).size).toBe(regions.length);
+          break;
+        }
+      }
+    }
+  });
+});
+
+describe('reference content', () => {
+  it('has a substantial lexicon with no duplicate entries', () => {
+    expect(LEXICON.length).toBeGreaterThan(150);
+    const keys = LEXICON.map(([la, en]) => `${la}|${en}`);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('has six cases for every noun and adjective paradigm', () => {
+    for (const n of NOUNS) {
+      expect(n.sg).toHaveLength(6);
+      expect(n.pl).toHaveLength(6);
+    }
+    for (const a of ADJECTIVES) {
+      expect(a.sg).toHaveLength(6);
+      expect(a.pl).toHaveLength(6);
+      for (const row of [...a.sg, ...a.pl]) expect(row).toHaveLength(3);
+    }
+  });
+
+  it('has six persons for every tense of every verb', () => {
+    for (const v of VERBS) for (const forms of Object.values(v.forms)) expect(forms).toHaveLength(6);
+  });
+});
+
+describe('voice recordings', () => {
+  const phrases = speakablePhrases();
+  const recorded = new Set(audioIndex.ids);
+
+  it('has a clip for every phrase and word the app can say (run `npm run audio` if this fails)', () => {
+    const missing = [...phrases, ...speakableWords(phrases)].filter((t) => !recorded.has(audioId(audioKey(t))));
+    expect(missing).toEqual([]);
+  });
+
+  it('has the clip files on disk', () => {
+    const files = new Set(Object.keys(import.meta.glob('/public/audio/*.mp3')));
+    const lost = audioIndex.ids.filter((id) => !files.has(`/public/audio/${id}.mp3`));
+    expect(lost).toEqual([]);
+  });
+
+  it('only uses sounds the Italian-trained voice knows', () => {
+    const known = new Set(Array.from('abdefijklmnoprstuwŋɔɛɡɾʊˈː ,.!?;:'));
+    const odd = phrases.filter((p) => Array.from(toPhonemes(p)).some((ch) => !known.has(ch)));
+    expect(odd).toEqual([]);
+  });
+});
