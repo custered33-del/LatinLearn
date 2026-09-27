@@ -8,6 +8,7 @@ import { courses as zh } from './courses/zh';
 import { courses as ar } from './courses/ar';
 import { courses as ja } from './courses/ja';
 import { courses as ru } from './courses/ru';
+import { courses as vi } from './courses/vi';
 import { ref as laRef } from './ref/la';
 import { ref as deRef } from './ref/de';
 import { ref as esRef } from './ref/es';
@@ -16,6 +17,7 @@ import { ref as zhRef } from './ref/zh';
 import { ref as arRef } from './ref/ar';
 import { ref as jaRef } from './ref/ja';
 import { ref as ruRef } from './ref/ru';
+import { ref as viRef } from './ref/vi';
 import { ADJECTIVES, LEXICON, NOUNS, VERBS } from './reference';
 import { audioId, audioKey } from '../lib/audio-key';
 import { toPhonemes } from '../lib/latin';
@@ -27,6 +29,7 @@ import audioZh from './audio-zh.json';
 import audioAr from './audio-ar.json';
 import audioJa from './audio-ja.json';
 import audioRu from './audio-ru.json';
+import audioVi from './audio-vi.json';
 import { speakablePhrases, speakableWords } from './speakable';
 import type { Course, LangRef } from './types';
 
@@ -39,6 +42,7 @@ const LANGS: [string, Course[], LangRef, { ids: string[] }][] = [
   ['ar', ar, arRef, audioAr],
   ['ja', ja, jaRef, audioJa],
   ['ru', ru, ruRef, audioRu],
+  ['vi', vi, viRef, audioVi],
 ];
 const ALL = LANGS.flatMap(([lang, courses]) => courses.map((c) => [`${lang}/${c.id}`, c] as const));
 
@@ -208,6 +212,10 @@ describe('number words', () => {
     [jaRef, 2026, '二千二十六'],
     [ruRef, 2026, 'две тысячи двадцать шесть'],
     [arRef, 21, 'وَاحِد وَعِشْرُون'],
+    [viRef, 15, 'mười lăm'],
+    [viRef, 21, 'hai mươi mốt'],
+    [viRef, 105, 'một trăm lẻ năm'],
+    [viRef, 2026, 'hai nghìn không trăm hai mươi sáu'],
   ])('%#: %i → %s', (ref, n, words) => {
     expect(ref.numberWords(n)).toBe(words);
   });

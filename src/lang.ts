@@ -3,7 +3,7 @@
  * FrenchLearn. The choice is stored on the device (or forced with ?lang=de,
  * which installed home-screen apps use) and applied before the first render.
  */
-export type LangId = 'la' | 'de' | 'es' | 'fr' | 'zh' | 'ar' | 'ja' | 'ru';
+export type LangId = 'la' | 'de' | 'es' | 'fr' | 'zh' | 'ar' | 'ja' | 'ru' | 'vi';
 
 export interface LangInfo {
   id: LangId;
@@ -199,6 +199,26 @@ export const LANGS: Record<LangId, LangInfo> = {
     sample: ['Привет! Как дела?', 'один, два, три', 'Я говорю по-русски.'],
     typing: false,
   },
+  vi: {
+    id: 'vi',
+    place: 'Vietnam',
+    app: 'VietnameseLearn',
+    language: 'Vietnamese',
+    native: 'Tiếng Việt',
+    flag: '🇻🇳',
+    speech: 'vi-VN',
+    brandBg: 'radial-gradient(circle at 50% 50%, #ffcd00 0 24%, transparent 25%), #da251d',
+    accent: ['#da251d', '#ff6b5a'],
+    accent2: '#ffcd00',
+    lede: 'Eleven short courses in Vietnamese, from colours to having an argument. Six tones, native voices, and games that make it stick.',
+    floaters: ['Xin chào!', '12', 'Ai?', 'xanh'],
+    wordOfDay: 'Từ của ngày',
+    hello: 'Xin chào!',
+    praise: ['Tuyệt vời!', 'Giỏi lắm!', 'Đúng rồi!', 'Hay quá!'],
+    levels: ['Người mới', 'Học sinh', 'Giỏi', 'Bậc thầy'],
+    voiceNote: 'in standard Vietnamese',
+    sample: ['Xin chào! Bạn khỏe không?', 'một, hai, ba', 'Tôi nói tiếng Việt.'],
+  },
 };
 
 const KEY = 'latinlearn:lang';
@@ -251,6 +271,7 @@ export const ICON_LETTER: Record<LangId, string> = {
   ar: 'M18 46V18h21v28h-7v-9h-7v9zM25 24v7h7v-7z',
   ja: 'M39 18v28H18V34h7v6h7V18z',
   ru: 'M18 46V18h21v17h-7l7 11h-8l-6-10v10zM25 24v5h7v-5z',
+  vi: 'M18 18h7l3.5 20L32 18h7l-7 28h-7z',
 };
 export const ICON_BAR = 'M42 18h6v28h-6z';
 
@@ -265,6 +286,7 @@ export function iconSvg(id: LangId): string {
     ar: '<rect width="64" height="22" fill="#ce1126"/><rect y="21" width="64" height="22" fill="#fff"/><rect y="42" width="64" height="22" fill="#1a1a1a"/>',
     ja: '<rect width="64" height="64" fill="#fff"/><circle cx="32" cy="32" r="17" fill="#bc002d"/>',
     ru: '<rect width="64" height="22" fill="#fff"/><rect y="21" width="64" height="22" fill="#0039a6"/><rect y="42" width="64" height="22" fill="#d52b1e"/>',
+    vi: '<rect width="64" height="64" fill="#da251d"/><path d="M32 17L35.53 27.15L46.27 27.36L37.71 33.85L40.82 44.14L32 38L23.18 44.14L26.29 33.85L17.73 27.36L28.47 27.15Z" fill="#ffcd00"/>',
   };
   const outline = 'stroke="rgba(0,0,0,.55)" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke"';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><clipPath id="c"><rect width="64" height="64" rx="16"/></clipPath><g clip-path="url(#c)">${stripes[id]}</g><path d="${ICON_LETTER[id]}" fill="#fff" fill-rule="evenodd" ${outline}/><path d="${ICON_BAR}" fill="#fff" fill-opacity=".8" ${outline}/></svg>`;
@@ -292,6 +314,7 @@ export function applyLanguage(): void {
       ar: ['206, 17, 38', '11, 138, 74', theme ? '255, 255, 255' : '26, 26, 26'],
       ja: ['188, 0, 45', '255, 158, 176', theme ? '255, 255, 255' : '188, 0, 45'],
       ru: ['213, 43, 30', '0, 57, 166', theme ? '255, 255, 255' : '0, 57, 166'],
+      vi: ['218, 37, 29', '255, 205, 0', '218, 37, 29'],
     };
     const [g1, g2, g3] = glows[LANG_ID];
     root.style.setProperty('--glow-1', `rgba(${g1}, ${theme ? 0.22 : 0.16})`);

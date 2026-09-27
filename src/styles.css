@@ -3961,7 +3961,7 @@ a.icon-btn {
 }
 .welcome-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   width: 100%;
   margin-top: 6px;

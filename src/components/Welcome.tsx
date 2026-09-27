@@ -158,7 +158,7 @@ export function Onboarding() {
           Pick your <span class="welcome-grad">LanguageLearn</span>
         </h1>
         <p class="welcome-lede">
-          {account ? 'Your progress is here. Pick a language to carry on.' : 'Eight languages, eleven courses each, real voices. You can switch any time.'}
+          {account ? 'Your progress is here. Pick a language to carry on.' : 'Nine languages, eleven courses each, real voices. You can switch any time.'}
         </p>
         <div class="welcome-grid">
           {ALL.map((l) => (

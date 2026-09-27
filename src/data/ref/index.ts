@@ -10,6 +10,7 @@ const LOADERS: Record<LangId, () => Promise<LangRef>> = {
   ar: () => import('./ar').then((m) => m.ref),
   ja: () => import('./ja').then((m) => m.ref),
   ru: () => import('./ru').then((m) => m.ref),
+  vi: () => import('./vi').then((m) => m.ref),
 };
 
 export const loadRef = (id: LangId): Promise<LangRef> => LOADERS[id]();

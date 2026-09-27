@@ -31,6 +31,7 @@ const MACRONS = {
   ar: [],
   ja: [],
   ru: [],
+  vi: ['ă', 'â', 'đ', 'ê', 'ô', 'ơ', 'ư'],
 }[LANG_ID];
 
 const answerText = (q: Question): string => (q.kind === 'choice' ? q.options[q.answer] : q.solution);

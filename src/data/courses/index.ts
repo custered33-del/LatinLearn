@@ -13,6 +13,7 @@ const LOADERS: Record<LangId, () => Promise<Course[]>> = {
   ar: () => import('./ar').then((m) => m.courses),
   ja: () => import('./ja').then((m) => m.courses),
   ru: () => import('./ru').then((m) => m.courses),
+  vi: () => import('./vi').then((m) => m.courses),
 };
 
 export async function loadCourses(id: LangId): Promise<Course[]> {

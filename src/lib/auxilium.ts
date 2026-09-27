@@ -104,6 +104,7 @@ const EXAMPLES: Record<typeof LANG_ID, [string, string]> = {
   ar: ['صَدِيق', 'كَتَبَ'],
   ja: ['ともだち', 'たべる'],
   ru: ['друг', 'говорить'],
+  vi: ['bạn', 'ăn'],
 };
 export const START_CHIPS = ['Quiz me', `What does ${EXAMPLES[LANG_ID][0]} mean?`, 'How do you say happy?', `Conjugate ${EXAMPLES[LANG_ID][1]}`, `Say 2026 in ${LANGUAGE}`];
 

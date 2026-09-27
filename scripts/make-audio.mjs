@@ -75,6 +75,13 @@ const LANGS = {
     female: { model: 'ru_RU-irina-medium', path: 'ru/ru_RU/irina/medium/' },
     male: { model: 'ru_RU-dmitri-medium', path: 'ru/ru_RU/dmitri/medium/' },
   },
+  vi: {
+    name: 'Vietnamese',
+    espeak: 'vi',
+    female: { model: 'vi_VN-vais1000-medium', path: 'vi/vi_VN/vais1000/medium/' },
+    // The male vivos speakers get the tones wrong (checked with Whisper), so both settings use vais1000.
+    male: { model: 'vi_VN-vais1000-medium', path: 'vi/vi_VN/vais1000/medium/' },
+  },
 };
 
 /** Bump to re-record everything after changing the settings below. */
