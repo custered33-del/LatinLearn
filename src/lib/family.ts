@@ -25,13 +25,24 @@ export interface Score {
   name: string;
   best: number;
   flag: string;
-  plays: number;
+  /** False while the round is being played (a quit round still counts as your go). */
+  done: boolean;
 }
-/** A family speed battle: best 60-second speed round between start and end wins. */
+/**
+ * A family speed battle. The family votes for a course; once everyone has
+ * voted (or the starter says go), each member gets one 60-second speed round
+ * on that course in their own language. Highest score wins.
+ */
 export interface Comp {
-  start: number;
-  end: number;
   by: string;
+  byId: string;
+  created: number;
+  /** How long everyone has to play once voting closes. */
+  mins: number;
+  votes?: Record<string, string>;
+  course?: string;
+  start?: number;
+  end?: number;
   scores?: Record<string, Score>;
 }
 export interface FamilyData {
@@ -74,7 +85,7 @@ const accountUrl = (account: string) => `${CLOUD_URL}/saves/${account}/family.js
 const randomId = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
 const randomCode = () => String(1000000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 9000000));
 
-async function send(url: string, method: 'PUT' | 'DELETE', body?: unknown) {
+async function send(url: string, method: 'PUT' | 'PATCH' | 'DELETE', body?: unknown) {
   const r = await fetch(url, { method, body: body === undefined ? undefined : JSON.stringify(body) });
   if (!r.ok) throw new Error(`family ${r.status}`);
 }
@@ -171,26 +182,69 @@ export function familyStreak(d: FamilyData): number {
 // Speed battles
 // ---------------------------------------------------------------------------
 
-export const compActive = (c?: Comp): c is Comp => !!c && c.end > Date.now();
+export type Phase = 'none' | 'vote' | 'play' | 'done';
 
-/** Everyone's best score, highest first. */
-export const compRanking = (c?: Comp): [string, Score][] =>
-  Object.entries(c?.scores ?? {}).sort((a, b) => b[1].best - a[1].best || a[1].plays - b[1].plays);
+/** Where a battle is: voting, playing, or finished (time up or everyone has played). */
+export function compPhase(c: Comp | undefined, members: Record<string, Member>): Phase {
+  if (!c?.created) return 'none';
+  if (!c.course) return Date.now() - c.created < 86_400_000 ? 'vote' : 'none';
+  const everyone = Object.keys(members).every((id) => c.scores?.[id]?.done);
+  return (c.end ?? 0) > Date.now() && !everyone ? 'play' : 'done';
+}
+
+/** Scores, highest first. */
+export const compRanking = (c?: Comp): [string, Score][] => Object.entries(c?.scores ?? {}).sort((a, b) => b[1].best - a[1].best);
+
+/** Vote counts per course, and the winner (ties go to the earlier course). */
+export function tally(c: Comp | undefined, order: string[]): { counts: Record<string, number>; winner?: string } {
+  const counts: Record<string, number> = {};
+  for (const v of Object.values(c?.votes ?? {})) counts[v] = (counts[v] ?? 0) + 1;
+  let winner: string | undefined;
+  for (const id of order) if (counts[id] && (!winner || counts[id] > counts[winner])) winner = id;
+  return { counts, winner };
+}
 
 export async function startComp(minutes: number): Promise<void> {
   if (!mine) return;
   await refreshFamily();
-  if (compActive(data?.comp)) return; // someone else just started one
-  const now = Date.now();
-  await send(famUrl(`${mine.code}/comp`), 'PUT', { start: now, end: now + minutes * 60_000, by: mine.name });
+  const phase = compPhase(data?.comp, data?.members ?? {});
+  if (phase === 'vote' || phase === 'play') return; // someone else just started one
+  const comp: Comp = { by: mine.name, byId: mine.id, created: Date.now(), mins: minutes };
+  await send(famUrl(`${mine.code}/comp`), 'PUT', comp);
   await refreshFamily();
 }
 
-/** Record a finished round; only your best score in the battle counts. */
+export async function vote(courseId: string, order: string[]): Promise<void> {
+  if (!mine) return;
+  await send(famUrl(`${mine.code}/comp/votes/${mine.id}`), 'PUT', courseId);
+  await refreshFamily();
+  await closeVoting(order);
+}
+
+/** Close voting once everyone has voted, or straight away when `force` is set (the starter). */
+export async function closeVoting(order: string[], force = false): Promise<void> {
+  if (!mine || !data) return;
+  const c = data.comp;
+  if (compPhase(c, data.members) !== 'vote' || !c) return;
+  const voted = Object.keys(c.votes ?? {});
+  if (!force && !Object.keys(data.members).every((id) => voted.includes(id))) return;
+  const { winner } = tally(c, order);
+  if (!winner) return;
+  const now = Date.now();
+  await send(famUrl(`${mine.code}/comp`), 'PATCH', { course: winner, start: now, end: now + c.mins * 60_000 });
+  await refreshFamily();
+}
+
+/** Mark my one round as started, so quitting halfway still uses it up. */
+export async function beginRound(): Promise<void> {
+  if (!mine) return;
+  const score: Score = { name: mine.name, best: 0, flag: LANG.flag, done: false };
+  await send(famUrl(`${mine.code}/comp/scores/${mine.id}`), 'PUT', score);
+}
+
 export async function submitScore(points: number): Promise<void> {
-  if (!mine || !compActive(data?.comp)) return;
-  const old = data.comp.scores?.[mine.id];
-  const score: Score = { name: mine.name, best: Math.max(points, old?.best ?? 0), flag: LANG.flag, plays: (old?.plays ?? 0) + 1 };
+  if (!mine) return;
+  const score: Score = { name: mine.name, best: points, flag: LANG.flag, done: true };
   await send(famUrl(`${mine.code}/comp/scores/${mine.id}`), 'PUT', score);
   await refreshFamily();
 }

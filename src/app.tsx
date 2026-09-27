@@ -1,12 +1,12 @@
 import type { JSX } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { courseById, stepById } from './data/courses';
-import type { Course, StepId } from './data/types';
+import type { Course, CourseId, StepId } from './data/types';
 import { Footer, Header } from './components/Layout';
 import { Icon } from './components/Icon';
 import { Spinner } from './components/ui';
 import { useTitle } from './lib/hooks';
-import { compActive, timeLeft, useFamily } from './lib/family';
+import { compPhase, timeLeft, useFamily } from './lib/family';
 import { href, useRoute } from './router';
 import { CourseOverview, StepShell } from './pages/Course';
 import { Flashcards } from './pages/Flashcards';
@@ -62,20 +62,32 @@ const LazyAuxilium = lazyPage<object>(
 
 const LazyCompete = lazyPage<object>(() => import('./pages/Compete').then((m) => m.Compete), 'Getting the battle ready');
 
-/** A strip under the header while a family speed battle is on. */
+/** A strip under the header while the family is voting, or it's your turn in a speed battle. */
 function BattleBanner() {
-  const { data } = useFamily();
+  const { mine, data } = useFamily();
   const [, tick] = useState(0);
   useEffect(() => {
     const t = setInterval(() => tick((n) => n + 1), 30_000);
     return () => clearInterval(t);
   }, []);
-  if (!compActive(data?.comp)) return null;
-  return (
-    <a class="battle-banner" href={href('compete')}>
-      ⚡ Family speed battle is on! Ends in {timeLeft(data.comp.end - Date.now())}. <b>Play →</b>
-    </a>
-  );
+  if (!mine || !data?.comp) return null;
+  const comp = data.comp;
+  const phase = compPhase(comp, data.members);
+  if (phase === 'vote' && !comp.votes?.[mine.id]) {
+    return (
+      <a class="battle-banner" href={href('compete')}>
+        🗳️ {comp.by} started a family speed battle. <b>Vote for the course →</b>
+      </a>
+    );
+  }
+  if (phase === 'play' && !comp.scores?.[mine.id]) {
+    return (
+      <a class="battle-banner" href={href('compete')}>
+        ⚡ Speed battle: {courseById(comp.course as CourseId)?.title}! Ends in {timeLeft((comp.end ?? 0) - Date.now())}. <b>Play your round →</b>
+      </a>
+    );
+  }
+  return null;
 }
 
 const STEP_PAGES: Record<StepId, (p: StepProps) => JSX.Element> = {

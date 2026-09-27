@@ -1,10 +1,11 @@
 import { L, LANG } from '../lang';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { COURSES } from '../data/courses';
+import { COURSES, courseById } from '../data/courses';
+import type { CourseId } from '../data/types';
 import { cloudEnabled, createCode, formatCode, logIn, logOut, syncNow, useCloud } from '../lib/cloud';
 import { Icon } from '../components/Icon';
 import {
-  compActive,
+  compPhase,
   compRanking,
   createFamily,
   familyStreak,
@@ -15,7 +16,7 @@ import {
   startComp,
   timeLeft,
   useFamily,
-  type Comp,
+  type FamilyData,
 } from '../lib/family';
 import { href } from '../router';
 import { LanguagePicker } from '../components/Layout';
@@ -387,23 +388,42 @@ const LENGTHS: [string, number][] = [
 ];
 
 /** Start a family speed battle, or show the one that's on. */
-export function BattleCard({ comp }: { comp?: Comp }) {
+export function BattleCard({ data, mineId }: { data: FamilyData; mineId: string }) {
   const [busy, setBusy] = useState(false);
   const [, tick] = useState(0);
   useEffect(() => {
     const t = setInterval(() => tick((n) => n + 1), 1000);
     return () => clearInterval(t);
   }, []);
+  const comp = data.comp;
+  const phase = compPhase(comp, data.members);
   const ranking = compRanking(comp);
-  if (compActive(comp)) {
+  const courseTitle = comp?.course ? (courseById(comp.course as CourseId)?.title ?? comp.course) : '';
+
+  if (phase === 'vote' && comp) {
+    const voted = Object.keys(comp.votes ?? {}).length;
     return (
       <div class="battle-card on">
-        <p class="battle-title">⚡ Speed battle on! Ends in {timeLeft(comp.end - Date.now())}</p>
+        <p class="battle-title">🗳️ {comp.by} started a speed battle!</p>
         <p class="muted small">
-          Started by {comp.by}. {ranking.length ? `Leader: ${ranking[0][1].name} with ${ranking[0][1].best}.` : 'Nobody has played yet.'}
+          Vote for the course. {voted} of {Object.keys(data.members).length} voted{comp.votes?.[mineId] ? ' (including you)' : ''}.
         </p>
         <a class="btn btn-primary" href={href('compete')}>
-          Join the battle
+          {comp.votes?.[mineId] ? 'See the votes' : 'Vote now'}
+        </a>
+      </div>
+    );
+  }
+  if (phase === 'play' && comp) {
+    const played = comp.scores?.[mineId];
+    return (
+      <div class="battle-card on">
+        <p class="battle-title">
+          ⚡ Speed battle: {courseTitle}! Ends in {timeLeft((comp.end ?? 0) - Date.now())}
+        </p>
+        <p class="muted small">{ranking.length ? `Leader: ${ranking[0][1].name} with ${ranking[0][1].best}.` : 'Nobody has played yet.'}</p>
+        <a class="btn btn-primary" href={href('compete')}>
+          {played ? 'See the scores' : 'Play your round'}
         </a>
       </div>
     );
@@ -411,12 +431,15 @@ export function BattleCard({ comp }: { comp?: Comp }) {
   return (
     <div class="battle-card">
       <p class="battle-title">⚡ Family speed battle</p>
-      {comp && ranking.length > 0 && (
+      {phase === 'done' && ranking.length > 0 && (
         <p class="muted small">
-          Last winner: <b>{ranking[0][1].name}</b> with {ranking[0][1].best} points 🏆
+          Last battle ({courseTitle}): <b>{ranking[0][1].name}</b> won with {ranking[0][1].best} points 🏆
         </p>
       )}
-      <p class="muted small">Everyone plays 60-second speed rounds in their own language. Best score when time runs out wins.</p>
+      <p class="muted small">
+        The family votes for a course, then everyone gets one 60-second speed round in their own language. Highest score wins. Pick how
+        long everyone has to play:
+      </p>
       <div class="btn-row">
         {LENGTHS.map(([label, mins]) => (
           <button
@@ -573,7 +596,7 @@ function FamilySection() {
                 </div>
                 {members.length > 1 && doneToday.length === members.length && <p class="muted small">Everyone practised today. Amazing teamwork! 🎉</p>}
               </div>
-              <BattleCard comp={data.comp} />
+              <BattleCard data={data} mineId={mine.id} />
               <ul class="family-list">
                 {members.map(([id, m], i) => (
                   <li key={id} class={cx(id === mine.id && 'me')}>

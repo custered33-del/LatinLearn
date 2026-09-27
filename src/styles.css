@@ -3619,3 +3619,51 @@ a.icon-btn {
 .battle-board ol {
   counter-reset: none;
 }
+
+.vote-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.vote-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 84px;
+  padding: 12px 14px;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.vote-option:hover {
+  transform: translateY(-2px);
+}
+.vote-option.mine {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px var(--accent);
+}
+.vote-title {
+  font-weight: 700;
+  font-size: 16px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.vote-count {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+}
+.vote-count:empty {
+  display: none;
+}
+.family-list li.waiting {
+  opacity: 0.6;
+}
