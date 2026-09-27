@@ -7,6 +7,9 @@
         ".validate": "newData.child('app').val() === 'LatinLearn' && newData.child('progress').exists()",
         "name": {
           ".validate": "newData.isString() && newData.val().length <= 20"
+        },
+        "lang": {
+          ".validate": "newData.isString() && newData.val().length <= 5"
         }
       }
     },

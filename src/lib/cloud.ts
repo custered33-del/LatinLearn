@@ -5,7 +5,7 @@
  * nothing is lost if you practise on your phone and your PC.
  */
 import { useEffect, useReducer } from 'preact/hooks';
-import type { LangId } from '../lang';
+import { LANG_ID, LANGS, setLanguageSaver, switchLanguage, type LangId } from '../lang';
 import { emptyProgress, getProgress, mergeProgress, readStored, sanitize, subscribeProgress, writeStored, type Progress } from './progress';
 
 /** One save holds every language app: `progress` is Latin, `langs` the others. */
@@ -52,6 +52,16 @@ export const isCode = (c: string) => /^\d{10}$/.test(c);
 
 export const accountName = () => name;
 
+/** The language the account was last used in (from the last download). */
+let accountLang: LangId | null = null;
+let firstSync = true;
+
+// Switching language saves it on the account.
+setLanguageSaver(async (id) => {
+  if (!code) return;
+  await fetch(`${CLOUD_URL}/saves/${code}/lang.json`, { method: 'PUT', body: JSON.stringify(id) });
+});
+
 function rememberName(n: string) {
   if (n === name) return;
   name = n;
@@ -89,9 +99,10 @@ const url = (c: string) => `${CLOUD_URL}/saves/${c}.json`;
 async function download(c: string): Promise<Partial<Saves> | null | 'missing'> {
   const r = await fetch(url(c), { cache: 'no-store' });
   if (!r.ok) throw new Error(`cloud ${r.status}`);
-  const data = (await r.json()) as { app?: string; progress?: unknown; langs?: Record<string, unknown>; name?: unknown } | null;
+  const data = (await r.json()) as { app?: string; progress?: unknown; langs?: Record<string, unknown>; name?: unknown; lang?: unknown } | null;
   if (!data) return 'missing';
   if (data.app !== APP) return null;
+  accountLang = typeof data.lang === 'string' && data.lang in LANGS ? (data.lang as LangId) : null;
   if (c === code || !code) rememberName(typeof data.name === 'string' ? data.name : '');
   const out: Partial<Saves> = {};
   for (const id of IDS) {
@@ -126,6 +137,13 @@ export function syncNow(): Promise<void> {
     setStatus({ state: 'syncing', at: status.at });
     try {
       const remote = await download(c);
+      // Opening the app: go to the language this account was last used in (on any device).
+      if (firstSync && accountLang && accountLang !== LANG_ID) {
+        firstSync = false;
+        void switchLanguage(accountLang);
+        return;
+      }
+      firstSync = false;
       if (remote === 'missing') {
         // The account was deleted or reset: this device logs out.
         wipeDevice();
@@ -204,6 +222,14 @@ export async function logIn(input: string): Promise<'ok' | 'wrong' | 'offline'> 
   }
   for (const id of IDS) writeStored(id, remote[id] ?? emptyProgress());
   remember(c);
+  // Open the account's last language next time the app starts (the welcome screen reloads straight into it).
+  if (accountLang) {
+    try {
+      localStorage.setItem('latinlearn:lang', accountLang);
+    } catch {
+      /* ignore */
+    }
+  }
   lastSynced = JSON.stringify(getProgress());
   setStatus({ state: 'synced', at: Date.now() });
   return 'ok';

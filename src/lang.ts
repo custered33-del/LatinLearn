@@ -258,12 +258,13 @@ function initial(): LangId {
   if (typeof location === 'undefined') return 'la';
   const forced = new URLSearchParams(location.search).get('lang');
   try {
+    // The language you last used wins; ?lang= (from a Home Screen app's address) only picks the first one.
+    const saved = localStorage.getItem(KEY);
+    if (isLang(saved)) return saved;
     if (isLang(forced)) {
       localStorage.setItem(KEY, forced);
       return forced;
     }
-    const saved = localStorage.getItem(KEY);
-    if (isLang(saved)) return saved;
   } catch {
     if (isLang(forced)) return forced;
   }
@@ -278,12 +279,18 @@ export const L = LANG_ID;
 /** Storage key for data that belongs to one language app. */
 export const langKey = (base: string, id: LangId = LANG_ID): string => (id === 'la' ? base : `${base}:${id}`);
 
-export function switchLanguage(id: LangId): void {
+/** Set by cloud.ts: saves the language on the logged-in account, so every device opens it. */
+let onSwitch: ((id: LangId) => Promise<unknown>) | null = null;
+export const setLanguageSaver = (fn: (id: LangId) => Promise<unknown>) => void (onSwitch = fn);
+
+export async function switchLanguage(id: LangId): Promise<void> {
   try {
     localStorage.setItem(KEY, id);
   } catch {
     /* session only */
   }
+  // Save it to the account first (but never wait more than a second).
+  if (onSwitch) await Promise.race([onSwitch(id).catch(() => undefined), new Promise((r) => setTimeout(r, 1000))]);
   const url = new URL(location.href);
   url.searchParams.delete('lang');
   url.hash = '#/';
