@@ -40,6 +40,7 @@ const OLD_KEYS = LANG_ID === 'la' ? ['latinlearn:progress:v1'] : [];
 export const MAX_STRENGTH = 5;
 
 const empty = (): Progress => ({ words: {}, courses: {}, challenges: {}, tasks: {}, xp: 0, streak: 0, lastDay: '' });
+export const emptyProgress = empty;
 
 const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
 

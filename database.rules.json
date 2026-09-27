@@ -23,6 +23,15 @@
               ".validate": "newData.isNumber()"
             }
           }
+        },
+        "comp": {
+          ".write": "$family.matches(/^[0-9]{7}$/)",
+          ".validate": "!newData.exists() || (newData.child('start').isNumber() && newData.child('end').isNumber() && newData.child('by').isString())",
+          "scores": {
+            "$member": {
+              ".validate": "$member.matches(/^[a-z0-9]{12}$/) && newData.child('best').isNumber() && newData.child('name').isString()"
+            }
+          }
         }
       }
     }

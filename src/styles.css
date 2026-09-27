@@ -3567,3 +3567,55 @@ a.icon-btn {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+
+/* Family speed battles */
+.battle-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1.5px dashed var(--line-2);
+}
+.battle-card.on {
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
+}
+.battle-card .btn {
+  justify-self: start;
+}
+.battle-title {
+  margin: 0;
+  font-weight: 700;
+}
+.battle-banner {
+  display: block;
+  padding: 10px 16px;
+  text-align: center;
+  background: var(--grad, var(--accent));
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+.battle-banner:hover {
+  filter: brightness(1.08);
+}
+.battle-page {
+  display: grid;
+  gap: 20px;
+  max-width: 720px;
+}
+.battle-play {
+  justify-self: center;
+  min-width: 240px;
+}
+.battle-result {
+  text-align: center;
+}
+.battle-points {
+  margin: 0;
+  font: 700 64px/1 var(--font-display);
+  color: var(--accent);
+}
+.battle-board ol {
+  counter-reset: none;
+}

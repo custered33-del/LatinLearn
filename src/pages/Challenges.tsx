@@ -642,7 +642,7 @@ function dealCard(vocab: VocabItem[], prev?: VocabItem) {
   return { v, shown, isMatch: shown === label(v) };
 }
 
-function Speed({ course, onFinish }: { course: Course; onFinish: Finish }) {
+export function Speed({ course, onFinish, intro }: { course: Course; onFinish: Finish; intro?: string }) {
   const [phase, setPhase] = useState<'ready' | 'play'>('ready');
   const [endAt, setEndAt] = useState(0);
   const [now, setNow] = useState(Date.now());
@@ -713,7 +713,7 @@ function Speed({ course, onFinish }: { course: Course; onFinish: Finish }) {
           +1, wrong ones −1.
         </p>
         <p class="muted small">
-          {SPEED_STARS[0]} points = 2 stars · {SPEED_STARS[1]} points = 3 stars · Keyboard: ← no, → yes
+          {intro ?? `${SPEED_STARS[0]} points = 2 stars · ${SPEED_STARS[1]} points = 3 stars`} · Keyboard: ← no, → yes
         </p>
         <button type="button" class="btn btn-primary btn-lg" onClick={start}>
           Start <Icon name="arrow-right" size={18} />

@@ -6,6 +6,7 @@ import { Footer, Header } from './components/Layout';
 import { Icon } from './components/Icon';
 import { Spinner } from './components/ui';
 import { useTitle } from './lib/hooks';
+import { compActive, timeLeft, useFamily } from './lib/family';
 import { href, useRoute } from './router';
 import { CourseOverview, StepShell } from './pages/Course';
 import { Flashcards } from './pages/Flashcards';
@@ -58,6 +59,24 @@ const LazyAuxilium = lazyPage<object>(
   () => Promise.all([import('./pages/Auxilium'), import('./lib/auxilium').then((m) => m.ready)]).then(([m]) => m.Auxilium),
   'Waking up Auxilium',
 );
+
+const LazyCompete = lazyPage<object>(() => import('./pages/Compete').then((m) => m.Compete), 'Getting the battle ready');
+
+/** A strip under the header while a family speed battle is on. */
+function BattleBanner() {
+  const { data } = useFamily();
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => tick((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  if (!compActive(data?.comp)) return null;
+  return (
+    <a class="battle-banner" href={href('compete')}>
+      ⚡ Family speed battle is on! Ends in {timeLeft(data.comp.end - Date.now())}. <b>Play →</b>
+    </a>
+  );
+}
 
 const STEP_PAGES: Record<StepId, (p: StepProps) => JSX.Element> = {
   learn: Learn,
@@ -117,6 +136,9 @@ export function App() {
   } else if (section === 'auxilium' && !id) {
     nav = '';
     page = <LazyAuxilium />;
+  } else if (section === 'compete' && !id) {
+    nav = '';
+    page = <LazyCompete />;
   } else if (section === 'settings' && !id) {
     nav = 'settings';
     page = <Settings />;
@@ -141,6 +163,7 @@ export function App() {
         Skip to content
       </a>
       <Header section={nav} />
+      {section !== 'compete' && !step && <BattleBanner />}
       <main id="main" ref={main} tabIndex={-1} class="page" key={pageKey}>
         {page}
       </main>

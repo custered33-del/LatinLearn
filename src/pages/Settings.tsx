@@ -3,7 +3,21 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { COURSES } from '../data/courses';
 import { cloudEnabled, createCode, formatCode, logIn, logOut, syncNow, useCloud } from '../lib/cloud';
 import { Icon } from '../components/Icon';
-import { createFamily, familyStreak, formatFamilyCode, joinFamily, leaveFamily, refreshFamily, useFamily } from '../lib/family';
+import {
+  compActive,
+  compRanking,
+  createFamily,
+  familyStreak,
+  formatFamilyCode,
+  joinFamily,
+  leaveFamily,
+  refreshFamily,
+  startComp,
+  timeLeft,
+  useFamily,
+  type Comp,
+} from '../lib/family';
+import { href } from '../router';
 import { LanguagePicker } from '../components/Layout';
 import { cx, useTitle } from '../lib/hooks';
 import { MASTERED } from '../lib/mastery';
@@ -135,7 +149,18 @@ function CloudSection() {
             <button type="button" class="btn btn-ghost btn-sm" disabled={busy} onClick={() => void run(syncNow)}>
               <Icon name="refresh" size={14} /> Sync now
             </button>
-            <button type="button" class="btn btn-ghost btn-sm" onClick={logOut}>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              disabled={busy}
+              onClick={() => {
+                const warn =
+                  status.state === 'offline'
+                    ? 'You’re offline, so your newest progress hasn’t been saved yet. Log out anyway? This device will be cleared.'
+                    : 'Log out? Your progress stays safe in your account, and this device is cleared until you log in again.';
+                if (confirm(warn)) void run(logOut);
+              }}
+            >
               Log out on this device
             </button>
           </div>
@@ -355,8 +380,68 @@ export function Settings() {
 
 const NAME_KEY = 'latinlearn:family-name';
 
+const LENGTHS: [string, number][] = [
+  ['10 min', 10],
+  ['1 hour', 60],
+  ['1 day', 1440],
+];
+
+/** Start a family speed battle, or show the one that's on. */
+export function BattleCard({ comp }: { comp?: Comp }) {
+  const [busy, setBusy] = useState(false);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const ranking = compRanking(comp);
+  if (compActive(comp)) {
+    return (
+      <div class="battle-card on">
+        <p class="battle-title">⚡ Speed battle on! Ends in {timeLeft(comp.end - Date.now())}</p>
+        <p class="muted small">
+          Started by {comp.by}. {ranking.length ? `Leader: ${ranking[0][1].name} with ${ranking[0][1].best}.` : 'Nobody has played yet.'}
+        </p>
+        <a class="btn btn-primary" href={href('compete')}>
+          Join the battle
+        </a>
+      </div>
+    );
+  }
+  return (
+    <div class="battle-card">
+      <p class="battle-title">⚡ Family speed battle</p>
+      {comp && ranking.length > 0 && (
+        <p class="muted small">
+          Last winner: <b>{ranking[0][1].name}</b> with {ranking[0][1].best} points 🏆
+        </p>
+      )}
+      <p class="muted small">Everyone plays 60-second speed rounds in their own language. Best score when time runs out wins.</p>
+      <div class="btn-row">
+        {LENGTHS.map(([label, mins]) => (
+          <button
+            key={label}
+            type="button"
+            class="btn btn-ghost btn-sm"
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              void startComp(mins)
+                .then(() => (location.hash = href('compete')))
+                .catch(() => alert('Couldn’t reach the cloud. Check your internet.'))
+                .finally(() => setBusy(false));
+            }}
+          >
+            Start: {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function FamilySection() {
-  const { mine, data } = useFamily();
+  const { account, mine, data } = useFamily();
   const [name, setName] = useState(() => {
     try {
       return localStorage.getItem(NAME_KEY) ?? '';
@@ -409,7 +494,11 @@ function FamilySection() {
       <h2 id="family-h" class="h-sm">
         <Icon name="flame" size={18} /> Family
       </h2>
-      {!mine ? (
+      {!account ? (
+        <p class="muted">
+          Families are saved to your account, so first <b>create a login code</b> (or log in) in the box above. Then you can make or join a family.
+        </p>
+      ) : !mine ? (
         <>
           <p class="muted">
             Learn together! Make a family, then share its 7-digit code. You’ll share a family streak and goals. Only names and scores are
@@ -484,6 +573,7 @@ function FamilySection() {
                 </div>
                 {members.length > 1 && doneToday.length === members.length && <p class="muted small">Everyone practised today. Amazing teamwork! 🎉</p>}
               </div>
+              <BattleCard comp={data.comp} />
               <ul class="family-list">
                 {members.map(([id, m], i) => (
                   <li key={id} class={cx(id === mine.id && 'me')}>

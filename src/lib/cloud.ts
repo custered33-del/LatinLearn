@@ -6,7 +6,7 @@
  */
 import { useEffect, useReducer } from 'preact/hooks';
 import type { LangId } from '../lang';
-import { getProgress, mergeProgress, readStored, sanitize, subscribeProgress, writeStored, type Progress } from './progress';
+import { emptyProgress, getProgress, mergeProgress, readStored, sanitize, subscribeProgress, writeStored, type Progress } from './progress';
 
 /** One save holds every language app: `progress` is Latin, `langs` the others. */
 type Saves = Record<LangId, Progress>;
@@ -34,6 +34,11 @@ const setStatus = (s: CloudStatus) => {
 };
 
 export const cloudCode = () => code;
+/** Run `fn` whenever the login or sync status changes. */
+export function subscribeCloud(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
 export const formatCode = (c: string) => `${c.slice(0, 3)} ${c.slice(3, 6)} ${c.slice(6)}`;
 export const isCode = (c: string) => /^\d{10}$/.test(c);
 
@@ -66,8 +71,9 @@ async function download(c: string): Promise<Partial<Saves> | null | 'missing'> {
 
 async function upload(c: string, saves: Saves): Promise<void> {
   const { la, ...langs } = saves;
+  // PATCH keeps other parts of the account (like its family) intact.
   const r = await fetch(url(c), {
-    method: 'PUT',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ app: APP, saved: Date.now(), progress: la, langs }),
   });
@@ -88,9 +94,14 @@ export function syncNow(): Promise<void> {
     setStatus({ state: 'syncing', at: status.at });
     try {
       const remote = await download(c);
+      if (remote === 'missing') {
+        // The account was deleted or reset: this device logs out.
+        wipeDevice();
+        return;
+      }
       const saves = localSaves();
       for (const id of IDS) {
-        const theirs = remote && remote !== 'missing' ? remote[id] : undefined;
+        const theirs = remote ? remote[id] : undefined;
         if (!theirs) continue;
         const merged = mergeProgress(saves[id], theirs);
         if (JSON.stringify(merged) !== JSON.stringify(saves[id])) writeStored(id, merged);
@@ -118,7 +129,19 @@ function remember(c: string | null) {
   }
 }
 
-/** Make a new login code holding this device's progress. */
+/** Clear every language's progress on this device and log out. */
+function wipeDevice() {
+  for (const id of IDS) writeStored(id, emptyProgress());
+  remember(null);
+  lastSynced = '';
+  setStatus({ state: 'off' });
+}
+
+/**
+ * Make a new login code. It starts with this device's progress, which is only
+ * ever guest progress: logging out clears the device, so one set of progress
+ * can't be copied into several accounts.
+ */
 export async function createCode(): Promise<string> {
   for (let tries = 0; tries < 5; tries++) {
     const digits = crypto.getRandomValues(new Uint32Array(3));
@@ -134,24 +157,29 @@ export async function createCode(): Promise<string> {
   throw new Error('no free code');
 }
 
-/** Log in on this device: merge the cloud progress with what's here. */
+/** Log in on this device: the account's progress replaces what's here. */
 export async function logIn(input: string): Promise<'ok' | 'wrong' | 'offline'> {
   const c = input.replace(/\D/g, '');
   if (!isCode(c)) return 'wrong';
+  let remote: Partial<Saves>;
   try {
-    const remote = await download(c);
-    if (!remote || remote === 'missing') return 'wrong';
+    const r = await download(c);
+    if (!r || r === 'missing') return 'wrong';
+    remote = r;
   } catch {
     return 'offline';
   }
+  for (const id of IDS) writeStored(id, remote[id] ?? emptyProgress());
   remember(c);
-  await syncNow();
-  return status.state === 'synced' ? 'ok' : 'offline';
+  lastSynced = JSON.stringify(getProgress());
+  setStatus({ state: 'synced', at: Date.now() });
+  return 'ok';
 }
 
-export function logOut(): void {
-  remember(null);
-  setStatus({ state: 'off' });
+/** Save to the account one last time, then clear this device. */
+export async function logOut(): Promise<void> {
+  await syncNow();
+  wipeDevice();
 }
 
 // Keep in sync: on start, when back online, and a few seconds after any change.
