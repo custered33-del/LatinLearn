@@ -24,6 +24,7 @@
     "@echogarden/espeak-ng-emscripten": "^0.3.5",
     "@preact/preset-vite": "^2.10.6",
     "onnxruntime-node": "^1.30.0",
+    "pinyin-pro": "^3.29.4",
     "typescript": "^7.0.2",
     "vite": "^6.4.3",
     "vite-plugin-singlefile": "^2.3.3",

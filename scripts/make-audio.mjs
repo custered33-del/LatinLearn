@@ -48,6 +48,33 @@ const LANGS = {
     female: { model: 'fr_FR-upmc-medium', path: 'fr/fr_FR/upmc/medium/', speaker: 'jessica' },
     male: { model: 'fr_FR-upmc-medium', path: 'fr/fr_FR/upmc/medium/', speaker: 'pierre' },
   },
+  zh: {
+    name: 'Chinese',
+    espeak: 'cmn',
+    female: { model: 'zh_CN-huayan-medium', path: 'zh/zh_CN/huayan/medium/' },
+    // Piper's male Chinese voices take a pinyin format that isn't documented (tested: gibberish),
+    // so both settings use huayan, who reads eSpeak phonemes perfectly.
+    male: { model: 'zh_CN-huayan-medium', path: 'zh/zh_CN/huayan/medium/' },
+  },
+  ar: {
+    name: 'Arabic',
+    espeak: 'ar',
+    // Piper has one Arabic speaker (male): the "female" slot uses his clearer medium-quality model.
+    female: { model: 'ar_JO-kareem-medium', path: 'ar/ar_JO/kareem/medium/' },
+    male: { model: 'ar_JO-kareem-low', path: 'ar/ar_JO/kareem/low/' },
+  },
+  ja: {
+    name: 'Japanese',
+    espeak: 'ja',
+    female: { model: 'ja_JP-hi_fi_captain-medium', path: 'ja/ja_JP/hi_fi_captain/medium/', speaker: 'female' },
+    male: { model: 'ja_JP-hi_fi_captain-medium', path: 'ja/ja_JP/hi_fi_captain/medium/', speaker: 'male' },
+  },
+  ru: {
+    name: 'Russian',
+    espeak: 'ru',
+    female: { model: 'ru_RU-irina-medium', path: 'ru/ru_RU/irina/medium/' },
+    male: { model: 'ru_RU-dmitri-medium', path: 'ru/ru_RU/dmitri/medium/' },
+  },
 };
 
 /** Bump to re-record everything after changing the settings below. */
@@ -78,6 +105,7 @@ const { audioKey, audioId } = await load('/src/lib/audio-key.ts');
 const courseSets = {};
 const refs = {};
 for (const id of Object.keys(LANGS)) {
+  if (only && only !== id) continue;
   courseSets[id] = (await load(`/src/data/courses/${id}.ts`).catch(() => load(`/src/data/courses/${id}/index.ts`))).courses;
   refs[id] = (await load(`/src/data/ref/${id}.ts`)).ref;
 }
@@ -95,17 +123,98 @@ async function espeakIpa(lang, text) {
   return espeak.synthesize_ipa(text).ipa.trim().replace(/_/g, '').replace(/\n+/g, ', ');
 }
 
+/** Chinese, Japanese and Arabic punctuation to plain ASCII. */
+const asciiPunct = (t) => t.replace(/[。．]/g, '.').replace(/[，、،]/g, ',').replace(/[？؟]/g, '?').replace(/！/g, '!').replace(/[：]/g, ':').replace(/[；؛]/g, ';');
+
+/** Japanese particles are written は, へ, を but said わ, え, お. */
+const jaSpoken = (t) =>
+  t
+    .replace(/こんにちは/g, 'こんにちわ')
+    .replace(/こんばんは/g, 'こんばんわ')
+    .split(' ')
+    .map((w) => ({ は: 'わ', へ: 'え', を: 'お' })[w] ?? w)
+    .join(' ');
+
+/** eSpeak's Japanese uses a few marks the Piper voice doesn't know. */
+const jaIpa = (ipa) => ipa.normalize('NFD').replace(/[\u031e\u0308ᵝ]/g, '').normalize('NFC')
+    .replace(/ɽ/g, 'ɾ') // the voice learned the Japanese r as a plain tap
+    .replace(/ũ/g, 'n'); // ん before s is still an n
+
 /** Phonemes for one phrase, sentence by sentence, keeping the closing punctuation. */
 async function phonemes(lang, text) {
   if (lang === 'la') return toPhonemes(text);
-  const sentences = text.replace(/[¡¿«»“”"]/g, '').match(/[^.!?]+[.!?]*/g) ?? [];
+  let t = asciiPunct(text);
+  if (lang === 'ja') t = jaSpoken(t);
+  const sentences = t.replace(/[¡¿«»“”"]/g, '').match(/[^.!?]+[.!?]*/g) ?? [];
   const out = [];
   for (const s of sentences) {
     const end = /[.!?]$/.test(s.trim()) ? s.trim().slice(-1) : '';
     const body = s.replace(/[.!?…]+/g, ' ').trim();
     if (body) out.push((await espeakIpa(LANGS[lang].espeak, body)) + end);
   }
-  return out.join(' ');
+  const ipa = out.join(' ');
+  return lang === 'ja' ? jaIpa(ipa) : ipa;
+}
+
+// --- Pinyin (for the Chinese voice trained on pinyin) and romaji guides ----------------
+
+const { pinyin } = await import('pinyin-pro');
+
+/** Pinyin tokens: initial, final, tone digit for each syllable (y and w count as initials). */
+function pinyinTokens(text) {
+  const t = asciiPunct(text);
+  const out = [];
+  const syllables = pinyin(t, { toneType: 'num', type: 'array', v: true, nonZh: 'consecutive' });
+  for (const raw of syllables) {
+    const syl = raw.trim().toLowerCase();
+    const m = syl.match(/^([a-zü]+)([1-5])?$/);
+    if (!m) {
+      for (const ch of syl) if ('.,?!:;'.includes(ch)) out.push(ch);
+      continue;
+    }
+    const body = m[1].replace(/ü/g, 'v');
+    const init = body.match(/^(zh|ch|sh|[bpmfdtnlgkhjqxrzcsyw])/)?.[1] ?? '';
+    const fin = body.slice(init.length) || 'i';
+    if (init) out.push(init);
+    out.push(fin, m[2] ?? '5');
+  }
+  return out;
+}
+
+const pinyinSay = (text) => pinyin(asciiPunct(text), { nonZh: 'consecutive' }).replace(/\s+([.,?!])/g, '$1');
+
+const KANA = {
+  きゃ: 'kya', きゅ: 'kyu', きょ: 'kyo', しゃ: 'sha', しゅ: 'shu', しょ: 'sho', ちゃ: 'cha', ちゅ: 'chu', ちょ: 'cho', にゃ: 'nya', にゅ: 'nyu', にょ: 'nyo',
+  ひゃ: 'hya', ひゅ: 'hyu', ひょ: 'hyo', みゃ: 'mya', みゅ: 'myu', みょ: 'myo', りゃ: 'rya', りゅ: 'ryu', りょ: 'ryo', ぎゃ: 'gya', ぎゅ: 'gyu', ぎょ: 'gyo',
+  じゃ: 'ja', じゅ: 'ju', じょ: 'jo', びゃ: 'bya', びゅ: 'byu', びょ: 'byo', ぴゃ: 'pya', ぴゅ: 'pyu', ぴょ: 'pyo',
+  あ: 'a', い: 'i', う: 'u', え: 'e', お: 'o', か: 'ka', き: 'ki', く: 'ku', け: 'ke', こ: 'ko', さ: 'sa', し: 'shi', す: 'su', せ: 'se', そ: 'so',
+  た: 'ta', ち: 'chi', つ: 'tsu', て: 'te', と: 'to', な: 'na', に: 'ni', ぬ: 'nu', ね: 'ne', の: 'no', は: 'ha', ひ: 'hi', ふ: 'fu', へ: 'he', ほ: 'ho',
+  ま: 'ma', み: 'mi', む: 'mu', め: 'me', も: 'mo', や: 'ya', ゆ: 'yu', よ: 'yo', ら: 'ra', り: 'ri', る: 'ru', れ: 're', ろ: 'ro', わ: 'wa', を: 'o', ん: 'n',
+  が: 'ga', ぎ: 'gi', ぐ: 'gu', げ: 'ge', ご: 'go', ざ: 'za', じ: 'ji', ず: 'zu', ぜ: 'ze', ぞ: 'zo', だ: 'da', ぢ: 'ji', づ: 'zu', で: 'de', ど: 'do',
+  ば: 'ba', び: 'bi', ぶ: 'bu', べ: 'be', ぼ: 'bo', ぱ: 'pa', ぴ: 'pi', ぷ: 'pu', ぺ: 'pe', ぽ: 'po', ぁ: 'a', ぃ: 'i', ぅ: 'u', ぇ: 'e', ぉ: 'o',
+};
+
+/** Hepburn romaji for kana (katakana too); particles read as said: wa, e, o. */
+function romaji(text) {
+  const hira = asciiPunct(text).replace(/[\u30a1-\u30f6]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+  return jaSpoken(hira)
+    .split(' ')
+    .map((word) => {
+      let out = '';
+      for (let i = 0; i < word.length; i++) {
+        const two = KANA[word.slice(i, i + 2)];
+        if (two) {
+          out += two;
+          i++;
+        } else if (word[i] === 'っ') {
+          const next = KANA[word.slice(i + 1, i + 3)] ?? KANA[word[i + 1]] ?? '';
+          out += next.startsWith('ch') ? 't' : next[0] ?? '';
+        } else if (word[i] === 'ー') out += out.slice(-1);
+        else out += KANA[word[i]] ?? word[i];
+      }
+      return out;
+    })
+    .join(' ');
 }
 
 // --- "Say it like this" guides from IPA ----------------------------------------------
@@ -214,9 +323,11 @@ async function synth(vc, ipa) {
   const map = vc.config.phoneme_id_map;
   const rate = vc.config.audio.sample_rate;
   const parts = [];
-  for (const [i, s] of ipa.split(/(?<=[.!?])\s+/).filter(Boolean).entries()) {
+  // Pinyin voices get whole tokens ("zh", "ang", "3"); eSpeak voices get one IPA character at a time.
+  const sentences = Array.isArray(ipa) ? [ipa] : ipa.split(/(?<=[.!?])\s+/).filter(Boolean);
+  for (const [i, s] of sentences.entries()) {
     const ids = [...map['^'], ...map['_']];
-    for (const ch of Array.from(s)) if (map[ch]) ids.push(...map[ch], ...map['_']);
+    for (const ch of Array.isArray(s) ? s : Array.from(s)) if (map[ch]) ids.push(...map[ch], ...map['_']);
     ids.push(...map['$']);
     const feeds = {
       input: new ort.Tensor('int64', BigInt64Array.from(ids.map(BigInt)), [1, ids.length]),
@@ -271,10 +382,12 @@ for (const [lang, L] of Object.entries(LANGS)) {
     let seconds = 0;
     for (const [id, job] of jobs) {
       const file = join(dir, `${id}.mp3`);
-      if (cache[id] === stamp(job.ipa) && existsSync(file)) continue;
-      const clip = await synth(vc, job.ipa);
+      const ph = v.pinyin ? pinyinTokens(job.text) : job.ipa;
+      const key = Array.isArray(ph) ? ph.join(' ') : ph;
+      if (cache[id] === stamp(key) && existsSync(file)) continue;
+      const clip = await synth(vc, ph);
       writeFileSync(file, clip.mp3);
-      cache[id] = stamp(job.ipa);
+      cache[id] = stamp(key);
       seconds += clip.seconds;
       if (++made % 200 === 0) console.log(`  ${L.name} ${kind}: ${made} clips…`);
     }
@@ -292,6 +405,7 @@ for (const [lang, L] of Object.entries(LANGS)) {
 
   const ids = [...jobs.keys()].sort();
   const index = { voice: `${L.female.model} / ${L.male.model} (Piper)`, ids };
-  if (lang !== 'la') index.say = Object.fromEntries(ids.map((id) => [id, ipaToSay(jobs.get(id).ipa)]));
+  const sayFor = (job) => (lang === 'zh' ? pinyinSay(job.text) : lang === 'ja' ? romaji(job.text) : ipaToSay(job.ipa));
+  if (lang !== 'la') index.say = Object.fromEntries(ids.map((id) => [id, sayFor(jobs.get(id))]));
   writeFileSync(join(root, 'src', 'data', lang === 'la' ? 'audio-index.json' : `audio-${lang}.json`), JSON.stringify(index) + '\n');
 }

@@ -15,7 +15,7 @@ export const fold = (s: string): string => stripMacrons(s).toLowerCase();
 export const normalizeAnswer = (s: string): string =>
   fold(s)
     .replace(/ß/g, 'ss')
-    .replace(/[^a-z\s-]/g, ' ')
+    .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 

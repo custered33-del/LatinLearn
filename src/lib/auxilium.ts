@@ -39,7 +39,7 @@ export const WORDS: Word[] = (() => {
   return out;
 })();
 
-const clean = (s: string) => fold(s).replace(/[^a-z\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+const clean = (s: string) => fold(s).replace(/[^\p{L}\p{N}\s-]/gu, ' ').replace(/\s+/g, ' ').trim();
 
 export function findLatin(q: string): Word | undefined {
   const k = clean(q);
@@ -100,6 +100,10 @@ const EXAMPLES: Record<typeof LANG_ID, [string, string]> = {
   de: ['Freund', 'sein'],
   es: ['amigo', 'hablar'],
   fr: ['ami', 'parler'],
+  zh: ['朋友', '说'],
+  ar: ['صَدِيق', 'كَتَبَ'],
+  ja: ['ともだち', 'たべる'],
+  ru: ['друг', 'говорить'],
 };
 export const START_CHIPS = ['Quiz me', `What does ${EXAMPLES[LANG_ID][0]} mean?`, 'How do you say happy?', `Conjugate ${EXAMPLES[LANG_ID][1]}`, `Say 2026 in ${LANGUAGE}`];
 

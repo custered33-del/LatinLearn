@@ -11,6 +11,7 @@
  */
 import { COURSES, headOf } from '../data/courses';
 import type { CourseId, VocabItem } from '../data/types';
+import { LANG } from '../lang';
 import { MASTERED } from './mastery';
 import type { Progress } from './progress';
 
@@ -142,7 +143,7 @@ export class DailySession {
     const s = this.progress().words[word.id] ?? 0;
     const target = this.level * 0.6 + s * 0.8;
     const kinds = (['recognise', 'produce', 'listen', 'type'] as const).filter(
-      (k) => DIFFICULTY[k] <= target && (k !== 'listen' || this.canListen(word)),
+      (k) => DIFFICULTY[k] <= target && (k !== 'listen' || this.canListen(word)) && (k !== 'type' || LANG.typing !== false),
     );
     if (!kinds.length) return 'recognise';
     // Usually the hardest allowed type, sometimes an easier one for variety.

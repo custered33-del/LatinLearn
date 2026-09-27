@@ -10,7 +10,7 @@ import { emptyProgress, getProgress, mergeProgress, readStored, sanitize, subscr
 
 /** One save holds every language app: `progress` is Latin, `langs` the others. */
 type Saves = Record<LangId, Progress>;
-const IDS: LangId[] = ['la', 'de', 'es', 'fr'];
+const IDS: LangId[] = ['la', 'de', 'es', 'fr', 'zh', 'ar', 'ja', 'ru'];
 
 /** Firebase Realtime Database URL; cloud save is hidden until this is set. */
 export const CLOUD_URL: string = 'https://latinlearn-custered33-default-rtdb.europe-west1.firebasedatabase.app';

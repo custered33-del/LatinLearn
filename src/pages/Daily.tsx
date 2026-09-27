@@ -16,6 +16,10 @@ const EXTRA: Record<typeof LANG_ID, string[]> = {
   de: ['ä', 'ö', 'ü', 'ß'],
   es: ['á', 'é', 'í', 'ó', 'ú', 'ñ'],
   fr: ['é', 'è', 'ê', 'à', 'ç', 'ô'],
+  zh: [],
+  ar: [],
+  ja: [],
+  ru: [],
 };
 const BONUS_XP = 25;
 

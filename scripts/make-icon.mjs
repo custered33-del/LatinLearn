@@ -19,7 +19,15 @@ const LETTERS = {
   de: [[39, 18], [18, 18], [18, 46], [39, 46], [39, 30], [29, 30], [29, 36], [32, 36], [32, 40], [25, 40], [25, 24], [39, 24]],
   es: [[39, 18], [18, 18], [18, 35], [32, 35], [32, 40], [18, 40], [18, 46], [39, 46], [39, 29], [25, 29], [25, 24], [39, 24]],
   fr: [[18, 46], [18, 18], [38, 18], [38, 24], [25, 24], [25, 29], [36, 29], [36, 35], [25, 35], [25, 46]],
+  zh: [[39, 18], [18, 18], [18, 46], [39, 46], [39, 40], [25, 40], [25, 24], [39, 24]],
+  ja: [[39, 18], [39, 46], [18, 46], [18, 34], [25, 34], [25, 40], [32, 40], [32, 18]],
 };
+// Letters with a hole (A, R) are several rings, filled even-odd.
+const HOLED = {
+  ar: [[[18, 46], [18, 18], [39, 18], [39, 46], [32, 46], [32, 37], [25, 37], [25, 46]], [[25, 24], [25, 31], [32, 31], [32, 24]]],
+  ru: [[[18, 46], [18, 18], [39, 18], [39, 35], [32, 35], [39, 46], [31, 46], [25, 36], [25, 46]], [[25, 24], [25, 29], [32, 29], [32, 24]]],
+};
+const STAR = [[13, 6], [15.4, 13.2], [23, 13.2], [16.9, 17.7], [19.2, 25], [13, 20.5], [6.8, 25], [9.1, 17.7], [3, 13.2], [10.6, 13.2]];
 const inPoly = (poly, x, y) => {
   let inside = false;
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -36,6 +44,10 @@ const FLAGS = {
   de: (x, y) => hex(y < 21.33 ? '#1a1a1a' : y < 42.67 ? '#dd0000' : '#ffce00'),
   es: (x, y) => hex(y < 16 || y >= 48 ? '#c60b1e' : '#ffc400'),
   fr: (x, y) => hex(x < 21.33 ? '#0055a4' : x < 42.67 ? '#ffffff' : '#ef4135'),
+  zh: (x, y) => hex(inPoly(STAR, x, y) ? '#ffde00' : '#de2910'),
+  ar: (x, y) => hex(y < 21.33 ? '#ce1126' : y < 42.67 ? '#ffffff' : '#1a1a1a'),
+  ja: (x, y) => hex((x - 32) ** 2 + (y - 32) ** 2 <= 17 ** 2 ? '#bc002d' : '#ffffff'),
+  ru: (x, y) => hex(y < 21.33 ? '#ffffff' : y < 42.67 ? '#0039a6' : '#d52b1e'),
 };
 const inBar = (x, y) => x >= 42 && x <= 48 && y >= 18 && y <= 46;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -43,7 +55,8 @@ const FROM = [0x7c, 0x4d, 0xff];
 const TO = [0xff, 0x4f, 0x79];
 
 function render(size, flag, letter) {
-  const inLetter = (x, y) => !!letter && inPoly(letter, x, y);
+  const rings = !letter ? [] : Array.isArray(letter[0][0]) ? letter : [letter];
+  const inLetter = (x, y) => rings.reduce((inside, ring) => inside !== inPoly(ring, x, y), false);
   const px = Buffer.alloc(size * size * 4);
   const ss = 4; // 4×4 supersampling for smooth edges
   for (let py = 0; py < size; py++) {
@@ -138,7 +151,7 @@ writeFileSync(new URL('icon-192.png', OUT), png(192));
 writeFileSync(new URL('icon-512.png', OUT), png(512));
 writeFileSync(new URL('latinlearn.ico', OUT), ico([16, 24, 32, 48, 64, 128, 256]));
 for (const [id, flag] of Object.entries(FLAGS)) {
-  writeFileSync(new URL(`icon-${id}-192.png`, OUT), png(192, flag, LETTERS[id]));
-  writeFileSync(new URL(`icon-${id}-512.png`, OUT), png(512, flag, LETTERS[id]));
+  writeFileSync(new URL(`icon-${id}-192.png`, OUT), png(192, flag, LETTERS[id] ?? HOLED[id]));
+  writeFileSync(new URL(`icon-${id}-512.png`, OUT), png(512, flag, LETTERS[id] ?? HOLED[id]));
 }
 console.log('Wrote public/icon-192.png, public/icon-512.png, public/latinlearn.ico and the flag icons');

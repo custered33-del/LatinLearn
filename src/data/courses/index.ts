@@ -9,6 +9,10 @@ const LOADERS: Record<LangId, () => Promise<Course[]>> = {
   de: () => import('./de').then((m) => m.courses),
   es: () => import('./es').then((m) => m.courses),
   fr: () => import('./fr').then((m) => m.courses),
+  zh: () => import('./zh').then((m) => m.courses),
+  ar: () => import('./ar').then((m) => m.courses),
+  ja: () => import('./ja').then((m) => m.courses),
+  ru: () => import('./ru').then((m) => m.courses),
 };
 
 export async function loadCourses(id: LangId): Promise<Course[]> {

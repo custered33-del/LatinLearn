@@ -3,7 +3,7 @@
  * FrenchLearn. The choice is stored on the device (or forced with ?lang=de,
  * which installed home-screen apps use) and applied before the first render.
  */
-export type LangId = 'la' | 'de' | 'es' | 'fr';
+export type LangId = 'la' | 'de' | 'es' | 'fr' | 'zh' | 'ar' | 'ja' | 'ru';
 
 export interface LangInfo {
   id: LangId;
@@ -30,6 +30,8 @@ export interface LangInfo {
   /** Shown under the speaker on Settings. */
   voiceNote: string;
   sample: [string, string, string];
+  /** False where typing needs another keyboard: typed questions become multiple choice. */
+  typing?: boolean;
 }
 
 export const LANGS: Record<LangId, LangInfo> = {
@@ -113,10 +115,94 @@ export const LANGS: Record<LangId, LangInfo> = {
     voiceNote: 'in standard French',
     sample: ['Bonjour ! Ça va ?', 'un, deux, trois', 'Je parle français.'],
   },
+  zh: {
+    id: 'zh',
+    place: 'China',
+    app: 'ChineseLearn',
+    language: 'Chinese',
+    native: '中文',
+    flag: '🇨🇳',
+    speech: 'zh-CN',
+    brandBg: 'radial-gradient(circle at 30% 32%, #ffde00 0 12%, transparent 13%), #de2910',
+    accent: ['#de2910', '#ff6b5a'],
+    accent2: '#ffde00',
+    lede: 'Eleven short courses in Mandarin Chinese, from colours to having an argument. Characters, pinyin, native voices and games that make it stick.',
+    floaters: ['你好!', '十二', '谁?', '蓝色'],
+    wordOfDay: '每日一词',
+    hello: '你好!',
+    praise: ['太好了!', '很好!', '对了!', '真棒!'],
+    levels: ['初学者', '学生', '高手', '大师'],
+    voiceNote: 'in standard Mandarin',
+    sample: ['你好!你好吗?', '一，二，三', '我说中文。'],
+    typing: false,
+  },
+  ar: {
+    id: 'ar',
+    place: 'the Arab world',
+    app: 'ArabicLearn',
+    language: 'Arabic',
+    native: 'العربية',
+    flag: '🇪🇬',
+    speech: 'ar-EG',
+    brandBg: 'linear-gradient(180deg, #ce1126 0 33.4%, #ffffff 33.4% 66.7%, #1a1a1a 66.7%)',
+    accent: ['#0b8a4a', '#4fd08c'],
+    accent2: '#ce1126',
+    lede: 'Eleven short courses in Modern Standard Arabic, from colours to having an argument. Real script with vowel marks, a native voice, and games that make it stick.',
+    floaters: ['مَرْحَبًا', '١٢', 'مَنْ؟', 'أَزْرَق'],
+    wordOfDay: 'كَلِمَةُ اليَوْم',
+    hello: 'مَرْحَبًا!',
+    praise: ['مُمْتَاز!', 'أَحْسَنْت!', 'رَائِع!', 'صَحِيح!'],
+    levels: ['مُبْتَدِئ', 'طَالِب', 'مَاهِر', 'أُسْتَاذ'],
+    voiceNote: 'in Modern Standard Arabic',
+    sample: ['مَرْحَبًا! كَيْفَ حَالُكَ؟', 'وَاحِد، اِثْنَان، ثَلَاثَة', 'أَنَا أَتَكَلَّمُ العَرَبِيَّة.'],
+    typing: false,
+  },
+  ja: {
+    id: 'ja',
+    place: 'Japan',
+    app: 'JapaneseLearn',
+    language: 'Japanese',
+    native: 'にほんご',
+    flag: '🇯🇵',
+    speech: 'ja-JP',
+    brandBg: 'radial-gradient(circle at 50% 50%, #bc002d 0 30%, #ffffff 31%)',
+    accent: ['#bc002d', '#ff5c7a'],
+    accent2: '#ff9eb0',
+    lede: 'Eleven short courses in Japanese, from colours to having an argument. Written in kana with spaces, so you can read it from day one, with native voices and games.',
+    floaters: ['こんにちは', 'じゅうに', 'だれ?', 'あお'],
+    wordOfDay: 'きょう の ことば',
+    hello: 'こんにちは!',
+    praise: ['すごい!', 'よく できました!', 'せいかい!', 'いいね!'],
+    levels: ['しょしんしゃ', 'がくせい', 'じょうず', 'せんせい'],
+    voiceNote: 'in standard Japanese',
+    sample: ['こんにちは! げんき です か?', 'いち、に、さん', 'わたし は にほんご を はなします。'],
+    typing: false,
+  },
+  ru: {
+    id: 'ru',
+    place: 'Russia',
+    app: 'RussianLearn',
+    language: 'Russian',
+    native: 'Русский',
+    flag: '🇷🇺',
+    speech: 'ru-RU',
+    brandBg: 'linear-gradient(180deg, #ffffff 0 33.4%, #0039a6 33.4% 66.7%, #d52b1e 66.7%)',
+    accent: ['#0039a6', '#6e9bff'],
+    accent2: '#d52b1e',
+    lede: 'Eleven short courses in Russian, from colours to having an argument. Real Cyrillic, native voices, and games that make it stick.',
+    floaters: ['Привет!', '12', 'Кто?', 'синий'],
+    wordOfDay: 'Слово дня',
+    hello: 'Привет!',
+    praise: ['Отлично!', 'Молодец!', 'Супер!', 'Правильно!'],
+    levels: ['Новичок', 'Ученик', 'Знаток', 'Мастер'],
+    voiceNote: 'in standard Russian',
+    sample: ['Привет! Как дела?', 'один, два, три', 'Я говорю по-русски.'],
+    typing: false,
+  },
 };
 
 const KEY = 'latinlearn:lang';
-const isLang = (x: unknown): x is LangId => x === 'la' || x === 'de' || x === 'es' || x === 'fr';
+const isLang = (x: unknown): x is LangId => typeof x === 'string' && x in LANGS;
 
 function initial(): LangId {
   if (typeof location === 'undefined') return 'la';
@@ -161,6 +247,10 @@ export const ICON_LETTER: Record<LangId, string> = {
   de: 'M39 18H18v28h21V30H29v6h3v4h-7V24h14z',
   es: 'M39 18H18v17h14v5H18v6h21V29H25v-5h14z',
   fr: 'M18 46V18h20v6H25v5h11v6H25v11z',
+  zh: 'M39 18H18v28h21v-6H25V24h14z',
+  ar: 'M18 46V18h21v28h-7v-9h-7v9zM25 24v7h7v-7z',
+  ja: 'M39 18v28H18V34h7v6h7V18z',
+  ru: 'M18 46V18h21v17h-7l7 11h-8l-6-10v10zM25 24v5h7v-5z',
 };
 export const ICON_BAR = 'M42 18h6v28h-6z';
 
@@ -171,9 +261,13 @@ export function iconSvg(id: LangId): string {
     de: '<rect width="64" height="22" fill="#1a1a1a"/><rect y="21" width="64" height="22" fill="#dd0000"/><rect y="42" width="64" height="22" fill="#ffce00"/>',
     es: '<rect width="64" height="64" fill="#c60b1e"/><rect y="16" width="64" height="32" fill="#ffc400"/>',
     fr: '<rect width="22" height="64" fill="#0055a4"/><rect x="21" width="22" height="64" fill="#fff"/><rect x="42" width="22" height="64" fill="#ef4135"/>',
+    zh: '<rect width="64" height="64" fill="#de2910"/><path d="M13 6l2.4 7.2H23l-6.1 4.5 2.3 7.3L13 20.5 6.8 25l2.3-7.3L3 13.2h7.6z" fill="#ffde00"/>',
+    ar: '<rect width="64" height="22" fill="#ce1126"/><rect y="21" width="64" height="22" fill="#fff"/><rect y="42" width="64" height="22" fill="#1a1a1a"/>',
+    ja: '<rect width="64" height="64" fill="#fff"/><circle cx="32" cy="32" r="17" fill="#bc002d"/>',
+    ru: '<rect width="64" height="22" fill="#fff"/><rect y="21" width="64" height="22" fill="#0039a6"/><rect y="42" width="64" height="22" fill="#d52b1e"/>',
   };
   const outline = 'stroke="rgba(0,0,0,.55)" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke"';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><clipPath id="c"><rect width="64" height="64" rx="16"/></clipPath><g clip-path="url(#c)">${stripes[id]}</g><path d="${ICON_LETTER[id]}" fill="#fff" ${outline}/><path d="${ICON_BAR}" fill="#fff" fill-opacity=".8" ${outline}/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><clipPath id="c"><rect width="64" height="64" rx="16"/></clipPath><g clip-path="url(#c)">${stripes[id]}</g><path d="${ICON_LETTER[id]}" fill="#fff" fill-rule="evenodd" ${outline}/><path d="${ICON_BAR}" fill="#fff" fill-opacity=".8" ${outline}/></svg>`;
 }
 
 /** Apply colours, title, icons and manifest for this language (before first render). */
@@ -194,6 +288,10 @@ export function applyLanguage(): void {
       de: ['221, 0, 0', '255, 206, 0', '221, 0, 0'],
       es: ['198, 11, 30', '255, 196, 0', '198, 11, 30'],
       fr: ['239, 65, 53', '0, 85, 164', theme ? '255, 255, 255' : '0, 85, 164'],
+      zh: ['222, 41, 16', '255, 222, 0', '222, 41, 16'],
+      ar: ['206, 17, 38', '11, 138, 74', theme ? '255, 255, 255' : '26, 26, 26'],
+      ja: ['188, 0, 45', '255, 158, 176', theme ? '255, 255, 255' : '188, 0, 45'],
+      ru: ['213, 43, 30', '0, 57, 166', theme ? '255, 255, 255' : '0, 57, 166'],
     };
     const [g1, g2, g3] = glows[LANG_ID];
     root.style.setProperty('--glow-1', `rgba(${g1}, ${theme ? 0.22 : 0.16})`);

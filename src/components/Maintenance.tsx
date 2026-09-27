@@ -16,6 +16,10 @@ const BACK_SOON: Record<typeof LANG_ID, [string, string]> = {
   de: ['Bis gleich!', 'See you soon!'],
   es: ['¡Volvemos pronto!', 'We’ll be back soon!'],
   fr: ['À très bientôt !', 'See you very soon!'],
+  zh: ['马上回来!', 'Back very soon!'],
+  ar: ['نَعُودُ قَرِيبًا!', 'We’ll be back soon!'],
+  ja: ['また すぐ に!', 'See you again soon!'],
+  ru: ['Скоро вернёмся!', 'We’ll be back soon!'],
 };
 
 /** Calls `cb` with true/false whenever the maintenance switch changes. */

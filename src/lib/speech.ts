@@ -63,6 +63,10 @@ const INDEX: Record<LangId, () => Promise<{ default: VoiceIndex }>> = {
   de: () => import('../data/audio-de.json'),
   es: () => import('../data/audio-es.json'),
   fr: () => import('../data/audio-fr.json'),
+  zh: () => import('../data/audio-zh.json'),
+  ar: () => import('../data/audio-ar.json'),
+  ja: () => import('../data/audio-ja.json'),
+  ru: () => import('../data/audio-ru.json'),
 };
 let guides: Record<string, string> = {};
 

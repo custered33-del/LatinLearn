@@ -1,3 +1,4 @@
+import { LANG } from '../lang';
 import { headOf } from '../data/courses';
 import type { Course, VocabItem } from '../data/types';
 import { headword } from './latin';
@@ -85,7 +86,8 @@ export function buildQuiz(course: Course, strengths: Record<string, number>, rng
     .map((x) => x.v);
 
   const words = byWeakness.slice(0, QUIZ_LENGTH - AUTHORED);
-  const typedPicks = new Set(words.filter(typeable).slice(0, TYPED).map((v) => v.id));
+  // Languages that need another keyboard (Chinese, Japanese, Arabic, Russian) get multiple choice instead.
+  const typedPicks = new Set(LANG.typing === false ? [] : words.filter(typeable).slice(0, TYPED).map((v) => v.id));
 
   const modes: ('la-en' | 'en-la' | 'listen')[] = shuffle(['la-en', 'en-la', withAudio ? 'listen' : 'la-en', 'en-la', 'la-en'], rng);
   let m = 0;
@@ -94,7 +96,7 @@ export function buildQuiz(course: Course, strengths: Record<string, number>, rng
       const solution = headOf(v);
       return {
         kind: 'type',
-        prompt: 'Type the Latin for',
+        prompt: `Type the ${LANG.language} for`,
         english: v.en,
         accept: [solution, headword(v.la)],
         solution,

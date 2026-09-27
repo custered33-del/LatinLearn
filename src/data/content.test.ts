@@ -4,10 +4,18 @@ import { courses as la } from './courses/la';
 import { courses as de } from './courses/de';
 import { courses as es } from './courses/es';
 import { courses as fr } from './courses/fr';
+import { courses as zh } from './courses/zh';
+import { courses as ar } from './courses/ar';
+import { courses as ja } from './courses/ja';
+import { courses as ru } from './courses/ru';
 import { ref as laRef } from './ref/la';
 import { ref as deRef } from './ref/de';
 import { ref as esRef } from './ref/es';
 import { ref as frRef } from './ref/fr';
+import { ref as zhRef } from './ref/zh';
+import { ref as arRef } from './ref/ar';
+import { ref as jaRef } from './ref/ja';
+import { ref as ruRef } from './ref/ru';
 import { ADJECTIVES, LEXICON, NOUNS, VERBS } from './reference';
 import { audioId, audioKey } from '../lib/audio-key';
 import { toPhonemes } from '../lib/latin';
@@ -15,6 +23,10 @@ import audioLa from './audio-index.json';
 import audioDe from './audio-de.json';
 import audioEs from './audio-es.json';
 import audioFr from './audio-fr.json';
+import audioZh from './audio-zh.json';
+import audioAr from './audio-ar.json';
+import audioJa from './audio-ja.json';
+import audioRu from './audio-ru.json';
 import { speakablePhrases, speakableWords } from './speakable';
 import type { Course, LangRef } from './types';
 
@@ -23,6 +35,10 @@ const LANGS: [string, Course[], LangRef, { ids: string[] }][] = [
   ['de', de, deRef, audioDe],
   ['es', es, esRef, audioEs],
   ['fr', fr, frRef, audioFr],
+  ['zh', zh, zhRef, audioZh],
+  ['ar', ar, arRef, audioAr],
+  ['ja', ja, jaRef, audioJa],
+  ['ru', ru, ruRef, audioRu],
 ];
 const ALL = LANGS.flatMap(([lang, courses]) => courses.map((c) => [`${lang}/${c.id}`, c] as const));
 
@@ -186,6 +202,12 @@ describe('number words', () => {
     [frRef, 99, 'quatre-vingt-dix-neuf'],
     [frRef, 200, 'deux cents'],
     [frRef, 2026, 'deux mille vingt-six'],
+    [zhRef, 2026, '两千零二十六'],
+    [zhRef, 115, '一百一十五'],
+    [zhRef, 15, '十五'],
+    [jaRef, 2026, '二千二十六'],
+    [ruRef, 2026, 'две тысячи двадцать шесть'],
+    [arRef, 21, 'وَاحِد وَعِشْرُون'],
   ])('%#: %i → %s', (ref, n, words) => {
     expect(ref.numberWords(n)).toBe(words);
   });
