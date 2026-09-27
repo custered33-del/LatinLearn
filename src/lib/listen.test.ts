@@ -50,7 +50,7 @@ describe('listen', () => {
     rec.onend?.(); // the phone ended the session after a pause: it should restart
     expect(FakeRecognition.starts).toBe(2);
     rec.say([{ text: ['agis'], final: false }]);
-    expect(live.at(-1)).toBe('quid agis');
+    expect(live[live.length - 1]).toBe('quid agis');
 
     l.stop();
     const heard = await l.result;
