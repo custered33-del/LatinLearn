@@ -3,7 +3,7 @@ import './fonts.css';
 import './styles.css';
 import { App } from './app';
 import { Maintenance } from './components/Maintenance';
-import { InstallGate, Onboarding, needsInstall, needsOnboarding } from './components/Welcome';
+import { FirstOpen, InstallGate, Onboarding, firstRun } from './components/Welcome';
 import { loadCourses } from './data/courses';
 import { LANG_ID, applyLanguage } from './lang';
 import { loadVoice } from './lib/speech';
@@ -12,14 +12,15 @@ import './lib/family';
 
 applyLanguage();
 const root = document.getElementById('app')!;
-if (needsInstall()) {
-  // iPhone/iPad browser: the app only runs from the Home Screen.
-  document.title = 'LanguageLearn';
-  if (!localStorage.getItem('latinlearn:lang')) document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute('content', 'LanguageLearn');
-  render(<InstallGate />, root);
-} else if (needsOnboarding()) {
+// First run: pick a language (or log in); on an iPhone browser, then add that app to the Home Screen.
+const first = firstRun();
+if (first === 'pick') {
   document.title = 'Welcome to LanguageLearn';
   render(<Onboarding />, root);
+} else if (first === 'install') {
+  render(<InstallGate />, root);
+} else if (first === 'welcome') {
+  render(<FirstOpen />, root);
 } else {
   void loadCourses(LANG_ID).then(() => render(<App />, root));
 }

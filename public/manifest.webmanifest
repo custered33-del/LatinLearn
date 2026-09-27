@@ -2,7 +2,7 @@
   "name": "LatinLearn",
   "short_name": "LatinLearn",
   "description": "Learn Latin through eleven short courses with games, challenges and a reference Lexicon.",
-  "start_url": "./",
+  "start_url": "./?lang=la",
   "display": "standalone",
   "background_color": "#0d0c11",
   "theme_color": "#6a3cf0",
