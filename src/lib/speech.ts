@@ -108,6 +108,13 @@ export function loadVoice(): Promise<void> {
 
 const hasClip = (id: string) => !!clips?.has(id);
 
+/** Both voices' recordings of a word or phrase (for voice match), or none if it wasn't recorded on its own. */
+export async function referenceClips(text: string): Promise<string[]> {
+  await loadVoice();
+  const id = audioId(audioKey(text));
+  return hasClip(id) ? [`${CLIP_BASE}${id}.mp3`, `${CLIP_BASE}m/${id}.mp3`] : [];
+}
+
 let player: HTMLAudioElement | null = null;
 let queue: string[] = [];
 let queueText = '';

@@ -5,18 +5,9 @@ import type { Course, VocabItem } from '../data/types';
 import { Icon } from '../components/Icon';
 import { ProgressBar, Ring, Say } from '../components/ui';
 import { cx } from '../lib/hooks';
-import { speechSimilarity } from '../lib/latin';
 import { actions, getProgress } from '../lib/progress';
-import {
-  listen,
-  recognitionSupported,
-  recorderSupported,
-  speak,
-  startRecording,
-  ttsSupported,
-  type Listening,
-  type Recording,
-} from '../lib/speech';
+import { recorderSupported, referenceClips, speak, startRecording, ttsSupported, type Recording } from '../lib/speech';
+import { compare, loadClip, startCapture, toWav, voiceMatchSupported, type Capture } from '../lib/voicematch';
 import { NextLink } from './Course';
 
 const SESSION = 8;
@@ -33,25 +24,26 @@ function pickItems(course: Course): VocabItem[] {
     .map((x) => x.v);
 }
 
-function verdict(score: number) {
-  if (score >= 0.8) return { label: 'Excellent!', tone: 'good', tip: 'That sounded spot on.' };
-  if (score >= 0.6) return { label: 'Close!', tone: 'warn', tip: 'Listen to the model once more, then try again.' };
-  return { label: 'Not quite', tone: 'bad', tip: 'Follow the respelling and lean on the syllable in CAPITALS.' };
+function verdict(score: number, pace = 1) {
+  const speed = pace < 0.6 ? ' You said it a lot faster than the voice: try it slower.' : pace > 1.8 ? ' You said it a lot slower than the voice: try it more smoothly.' : '';
+  if (score >= 0.8) return { label: 'Excellent!', tone: 'good', tip: `That matches the voice really well.${speed}` };
+  if (score >= 0.6) return { label: 'Close!', tone: 'warn', tip: `Listen to the voice once more, then try again.${speed}` };
+  return { label: 'Not quite', tone: 'bad', tip: `Play the voice, copy its rhythm and the syllable in CAPITALS, then try again.${speed}` };
 }
 
 export function Speak({ course }: { course: Course }) {
   const [items, setItems] = useState(() => pickItems(course));
   const [i, setI] = useState(0);
-  const [mode, setMode] = useState<Mode>(recognitionSupported ? 'auto' : 'self');
+  const [mode, setMode] = useState<Mode>(voiceMatchSupported ? 'auto' : 'self');
   const [phase, setPhase] = useState<Phase>('idle');
-  const [attempt, setAttempt] = useState<{ score: number; heard?: string } | null>(null);
+  const [attempt, setAttempt] = useState<{ score: number; pace?: number } | null>(null);
   const [best, setBest] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [clip, setClip] = useState<string | null>(null);
   const [finished, setFinished] = useState(false);
-  const [live, setLive] = useState('');
-  const listening = useRef<Listening | null>(null);
-  const emptyTries = useRef(0);
+  const [level, setLevel] = useState(0);
+  const capture = useRef<Capture | null>(null);
+  const refs = useRef<Promise<Float32Array[]> | null>(null);
   const recording = useRef<Recording | null>(null);
 
   const item = items[i];
@@ -62,7 +54,7 @@ export function Speak({ course }: { course: Course }) {
 
   useEffect(
     () => () => {
-      listening.current?.cancel();
+      capture.current?.cancel();
       void recording.current?.stop();
     },
     [],
@@ -81,62 +73,61 @@ export function Speak({ course }: { course: Course }) {
     setPhase('result');
   };
 
+  // Live level meter while recording.
+  useEffect(() => {
+    if (phase !== 'listening') return;
+    const t = setInterval(() => setLevel(capture.current?.level() ?? 0), 80);
+    return () => clearInterval(t);
+  }, [phase]);
+
+  /** Voice match: record, then compare with the native voice (no speech recognition). */
   const startListening = async () => {
     setError(null);
     setAttempt(null);
-    setPhase('listening');
-    setLive('');
-    const l = listen(setLive);
-    listening.current = l;
+    clearClip();
     try {
-      const alts = await l.result;
-      if (listening.current !== l) return;
-      if (!alts.length) {
-        setPhase('idle');
-        if (++emptyTries.current >= 2) {
-          // The mic works but this browser's recogniser returns nothing (e.g. some Home Screen apps).
-          setError('This browser isn’t turning your voice into words, so we’ve switched to self-check: record yourself and compare with the model.');
-          setMode('self');
-        } else setError('Didn’t catch anything. Tap the mic, say it, then tap the mic again.');
-        return;
-      }
-      emptyTries.current = 0;
-      // Recognisers may write the word differently: kanji for kana, digits for numbers.
-      const digits = course.id === 'numbers' ? item.id.match(/-(\d+)$/)?.[1] : undefined;
-      const targets = [target, ...(item.alts ?? []), ...(digits ? [digits] : [])];
-      const top = alts
-        .map((heard) => ({ heard, score: Math.max(...targets.map((t) => speechSimilarity(heard, t))) }))
-        .sort((a, b) => b.score - a.score)[0];
-      setAttempt({ heard: top.heard, score: top.score });
-      score(top.score);
-    } catch (err) {
-      const code = (err as Error).message;
+      capture.current = await startCapture();
+      setPhase('listening');
+      // Get the voice's recordings of this word ready while the learner speaks.
+      refs.current = referenceClips(target).then((urls) => Promise.all(urls.map(loadClip)));
+    } catch {
       setPhase('idle');
-      if (code === 'aborted') return;
-      if (code === 'not-allowed' || code === 'service-not-allowed') {
-        setError('Microphone access is blocked. Allow it in your browser settings, or switch to self-check.');
-      } else if (code === 'no-speech') {
-        setError('No speech heard. Tap the mic and try again.');
-      } else {
-        // e.g. network, service-not-allowed (some Home Screen apps), language-not-supported
-        setError(`This browser’s speech recogniser isn’t working here (${code}). Switched to self-check: record yourself and compare.`);
-        setMode('self');
-      }
-    } finally {
-      if (listening.current === l) listening.current = null;
+      setError('Microphone access is blocked. Allow it in your browser settings, or use self-check.');
     }
   };
 
-  /** Tapping the mic again: finish and check what was said. */
-  const finishListening = () => {
-    if (!listening.current) return;
-    listening.current.stop();
+  /** Tapping the mic again: stop and compare with the voice. */
+  const finishListening = async () => {
+    const c = capture.current;
+    if (!c) return;
+    capture.current = null;
     setPhase('checking');
+    const mine = await c.stop();
+    setClip(URL.createObjectURL(toWav(mine)));
+    let voices: Float32Array[] = [];
+    try {
+      voices = (await refs.current) ?? [];
+    } catch {
+      /* offline and not cached */
+    }
+    if (!voices.length) {
+      setPhase('idle');
+      setError('Couldn’t load the voice for this word. Check your internet, or use self-check.');
+      return;
+    }
+    const m = compare(mine, voices);
+    if (!m) {
+      setPhase('idle');
+      setError('Didn’t hear you clearly. Tap the mic, say the word, then tap the mic again.');
+      return;
+    }
+    setAttempt({ score: m.score, pace: m.pace });
+    score(m.score);
   };
 
   const stopListening = () => {
-    listening.current?.cancel();
-    listening.current = null;
+    capture.current?.cancel();
+    capture.current = null;
     setPhase('idle');
   };
 
@@ -196,7 +187,9 @@ export function Speak({ course }: { course: Course }) {
           <Ring value={avg} size={128} stroke={10} colors={course.colors} label={`Average ${avg}%`}>
             <span class="ring-big">{avg}%</span>
           </Ring>
-          <h1 class="result-title">{avg >= 80 ? 'You sound like a Roman!' : avg >= 60 ? 'Getting there!' : 'Good practice!'}</h1>
+          <h1 class="result-title">
+            {avg >= 80 ? (LANG.id === 'la' ? 'You sound like a Roman!' : `You sound like a real ${LANG.language} speaker!`) : avg >= 60 ? 'Getting there!' : 'Good practice!'}
+          </h1>
           <ul class="score-list">
             {items.map((v, k) => {
               const s = Math.round((best[k] ?? 0) * 100);
@@ -222,7 +215,7 @@ export function Speak({ course }: { course: Course }) {
     );
   }
 
-  const v = attempt && phase === 'result' ? verdict(attempt.score) : null;
+  const v = attempt && phase === 'result' ? verdict(attempt.score, attempt.pace) : null;
 
   return (
     <div class="drill">
@@ -231,7 +224,7 @@ export function Speak({ course }: { course: Course }) {
         <span class="drill-count">
           {i + 1}/{items.length}
         </span>
-        {recognitionSupported && (
+        {voiceMatchSupported && (
           <button
             type="button"
             class="btn btn-ghost btn-sm"
@@ -243,7 +236,7 @@ export function Speak({ course }: { course: Course }) {
             }}
           >
             <Icon name="swap" size={16} />
-            {mode === 'auto' ? 'Self-check' : 'Auto-check'}
+            {mode === 'auto' ? 'Self-check' : 'Voice match'}
           </button>
         )}
       </div>
@@ -268,23 +261,28 @@ export function Speak({ course }: { course: Course }) {
               class={cx('mic', phase === 'listening' && 'live')}
               onClick={phase === 'listening' ? finishListening : startListening}
               disabled={phase === 'checking'}
-              aria-label={phase === 'listening' ? 'Finished speaking: check it' : 'Start speaking'}
+              aria-label={phase === 'listening' ? 'Finished speaking: compare it' : 'Start speaking'}
             >
               <Icon name={phase === 'listening' ? 'stop' : 'mic'} size={34} />
             </button>
+            {phase === 'listening' && (
+              <div class="mic-level" aria-hidden="true">
+                <span style={{ width: `${Math.round(level * 100)}%` }} />
+              </div>
+            )}
             <p class="mic-label" aria-live="polite">
               {phase === 'listening'
-                ? 'Listening… say it, then tap the mic again when you’ve finished'
+                ? 'Recording… say it, then tap the mic again'
                 : phase === 'checking'
-                  ? 'Checking…'
+                  ? 'Comparing with the voice…'
                   : phase === 'result'
                     ? 'Tap the mic to try again'
                     : 'Tap the mic, say it, then tap the mic again'}
             </p>
-            {phase === 'listening' && live && (
-              <p class="heard">
-                Hearing: “<span lang={L}>{live}</span>”
-              </p>
+            {clip && phase !== 'listening' && (
+              <button type="button" class="btn btn-ghost btn-sm" onClick={() => void new Audio(clip).play()}>
+                <Icon name="play" size={16} /> Play yours
+              </button>
             )}
           </>
         ) : (
@@ -338,11 +336,6 @@ export function Speak({ course }: { course: Course }) {
               <p class="verdict-label">
                 {v.label} <span class="muted">{Math.round(attempt.score * 100)}%</span>
               </p>
-              {attempt.heard !== undefined && (
-                <p class="heard">
-                  We heard: “<span lang={L}>{attempt.heard}</span>”
-                </p>
-              )}
               <p class="muted small">{v.tip}</p>
             </div>
           )}
@@ -370,8 +363,8 @@ export function Speak({ course }: { course: Course }) {
       </div>
       {mode === 'auto' && (
         <p class="fine-print">
-          Speech checking uses your browser’s recogniser, which may send audio to an online service.
-          {LANG.id === 'la' ? ' Browsers don’t understand Latin, so we listen in Italian (the closest match) and compare the sounds rather than the spelling.' : ''}
+          Voice match compares the sound of your recording, from the moment you start to the moment you stop, with the native voice
+          saying the same word. It all happens on your device: nothing is sent anywhere.
         </p>
       )}
     </div>

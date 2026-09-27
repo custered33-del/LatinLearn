@@ -209,7 +209,11 @@ export function Home() {
               <Icon name="column" size={26} />
             </span>
             <h3>The Lexicon</h3>
-            <p>Over 350 words, every declension, full verb tables, a Roman numeral converter and a pronunciation lab.</p>
+            <p>
+              {LANG.id === 'la'
+                ? 'Over 350 words, every declension, full verb tables, a Roman numeral converter and a pronunciation lab.'
+                : `Every ${LANG.language} word from the courses, pronunciation tips, verb tables, a number converter and all the grammar in one place.`}
+            </p>
             <span class="lexicon-go">
               Explore <Icon name="arrow-right" size={16} />
             </span>

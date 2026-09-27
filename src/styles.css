@@ -4197,3 +4197,20 @@ a.icon-btn {
   font-weight: 600;
   font-size: 14px;
 }
+
+/* Voice match level meter */
+.mic-level {
+  width: min(220px, 70%);
+  height: 8px;
+  margin: 4px auto 0;
+  border-radius: 999px;
+  background: var(--line-2);
+  overflow: hidden;
+}
+.mic-level span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--grad, var(--accent));
+  transition: width 0.08s linear;
+}
