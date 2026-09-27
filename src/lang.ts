@@ -155,7 +155,16 @@ export function switchLanguage(id: LangId): void {
   if (url.toString() === location.href) location.reload();
 }
 
-/** Flag-coloured SVG icon: the brand background with a white "L" for "Learn". */
+/** The icon's letter: G, S or F next to a bar, like LatinLearn's "L|" (shapes on a 64-unit grid). */
+export const ICON_LETTER: Record<LangId, string> = {
+  la: 'M18 46V18h7v22h14v6z',
+  de: 'M39 18H18v28h21V30H29v6h3v4h-7V24h14z',
+  es: 'M39 18H18v17h14v5H18v6h21V29H25v-5h14z',
+  fr: 'M18 46V18h20v6H25v5h11v6H25v11z',
+};
+export const ICON_BAR = 'M42 18h6v28h-6z';
+
+/** Flag-coloured SVG icon for the browser tab: flag background, white letter and bar with a soft dark outline. */
 export function iconSvg(id: LangId): string {
   const stripes: Record<LangId, string> = {
     la: '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c4dff"/><stop offset="1" stop-color="#ff4f79"/></linearGradient></defs><rect width="64" height="64" fill="url(#g)"/>',
@@ -163,7 +172,8 @@ export function iconSvg(id: LangId): string {
     es: '<rect width="64" height="64" fill="#c60b1e"/><rect y="16" width="64" height="32" fill="#ffc400"/>',
     fr: '<rect width="22" height="64" fill="#0055a4"/><rect x="21" width="22" height="64" fill="#fff"/><rect x="42" width="22" height="64" fill="#ef4135"/>',
   };
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><clipPath id="c"><rect width="64" height="64" rx="16"/></clipPath><g clip-path="url(#c)">${stripes[id]}</g><path d="M20 16v32h22" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/><path d="M20 16v32h22" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+  const outline = 'stroke="rgba(0,0,0,.55)" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke"';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><clipPath id="c"><rect width="64" height="64" rx="16"/></clipPath><g clip-path="url(#c)">${stripes[id]}</g><path d="${ICON_LETTER[id]}" fill="#fff" ${outline}/><path d="${ICON_BAR}" fill="#fff" fill-opacity=".8" ${outline}/></svg>`;
 }
 
 /** Apply colours, title, icons and manifest for this language (before first render). */

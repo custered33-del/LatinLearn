@@ -13,8 +13,24 @@ const inRoundedSquare = (x, y) => {
   return x >= 0 && x <= 64 && y >= 0 && y <= 64 && (x - cx) ** 2 + (y - cy) ** 2 <= r * r;
 };
 const inL = (x, y) => (x >= 18 && x <= 25 && y >= 18 && y <= 46) || (x >= 18 && x <= 39 && y >= 40 && y <= 46);
-// GermanLearn, SpanishLearn and FrenchLearn: flag background, white "L" with a soft dark outline.
-const inL2 = (x, y) => (x >= 16 && x <= 27 && y >= 16 && y <= 48) || (x >= 16 && x <= 41 && y >= 38 && y <= 48);
+// GermanLearn, SpanishLearn and FrenchLearn: flag background, white G / S / F and bar with a soft dark
+// outline (the same shapes as ICON_LETTER in src/lang.ts).
+const LETTERS = {
+  de: [[39, 18], [18, 18], [18, 46], [39, 46], [39, 30], [29, 30], [29, 36], [32, 36], [32, 40], [25, 40], [25, 24], [39, 24]],
+  es: [[39, 18], [18, 18], [18, 35], [32, 35], [32, 40], [18, 40], [18, 46], [39, 46], [39, 29], [25, 29], [25, 24], [39, 24]],
+  fr: [[18, 46], [18, 18], [38, 18], [38, 24], [25, 24], [25, 29], [36, 29], [36, 35], [25, 35], [25, 46]],
+};
+const inPoly = (poly, x, y) => {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+};
+const RING = Array.from({ length: 12 }, (_, k) => [1.3 * Math.cos((k * Math.PI) / 6), 1.3 * Math.sin((k * Math.PI) / 6)]);
+const near = (inside, x, y) => RING.some(([dx, dy]) => inside(x + dx, y + dy));
 const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const FLAGS = {
   de: (x, y) => hex(y < 21.33 ? '#1a1a1a' : y < 42.67 ? '#dd0000' : '#ffce00'),
@@ -26,7 +42,8 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const FROM = [0x7c, 0x4d, 0xff];
 const TO = [0xff, 0x4f, 0x79];
 
-function render(size, flag) {
+function render(size, flag, letter) {
+  const inLetter = (x, y) => !!letter && inPoly(letter, x, y);
   const px = Buffer.alloc(size * size * 4);
   const ss = 4; // 4×4 supersampling for smooth edges
   for (let py = 0; py < size; py++) {
@@ -40,8 +57,10 @@ function render(size, flag) {
           const t = (x + y) / 128;
           let c = flag ? flag(x, y) : FROM.map((f, k) => lerp(f, TO[k], t));
           if (flag) {
-            if (inL(x, y)) c = [255, 255, 255];
-            else if (inL2(x, y)) c = c.map((v) => v * 0.55);
+            const mark = (px, py) => inLetter(px, py) || inBar(px, py);
+            if (inLetter(x, y)) c = [255, 255, 255];
+            else if (inBar(x, y)) c = c.map((v) => lerp(v, 255, 0.8));
+            else if (near(mark, x, y)) c = c.map((v) => v * 0.5);
           } else if (inL(x, y)) c = [255, 255, 255];
           else if (inBar(x, y)) c = c.map((v) => lerp(v, 255, 0.7));
           r += c[0]; g += c[1]; b += c[2]; a += 255;
@@ -79,8 +98,8 @@ const chunk = (type, data) => {
   return Buffer.concat([len, body, crc]);
 };
 
-function png(size, flag) {
-  const rgba = render(size, flag);
+function png(size, flag, letter) {
+  const rgba = render(size, flag, letter);
   const raw = Buffer.alloc(size * (size * 4 + 1));
   for (let y = 0; y < size; y++) rgba.copy(raw, y * (size * 4 + 1) + 1, y * size * 4, (y + 1) * size * 4);
   const ihdr = Buffer.alloc(13);
@@ -119,7 +138,7 @@ writeFileSync(new URL('icon-192.png', OUT), png(192));
 writeFileSync(new URL('icon-512.png', OUT), png(512));
 writeFileSync(new URL('latinlearn.ico', OUT), ico([16, 24, 32, 48, 64, 128, 256]));
 for (const [id, flag] of Object.entries(FLAGS)) {
-  writeFileSync(new URL(`icon-${id}-192.png`, OUT), png(192, flag));
-  writeFileSync(new URL(`icon-${id}-512.png`, OUT), png(512, flag));
+  writeFileSync(new URL(`icon-${id}-192.png`, OUT), png(192, flag, LETTERS[id]));
+  writeFileSync(new URL(`icon-${id}-512.png`, OUT), png(512, flag, LETTERS[id]));
 }
 console.log('Wrote public/icon-192.png, public/icon-512.png, public/latinlearn.ico and the flag icons');
