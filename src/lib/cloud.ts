@@ -28,7 +28,7 @@ try {
   /* storage blocked */
 }
 const NAME_KEY = 'latinlearn:name';
-/** The name on the account, used to greet the learner ("Guten Tag, Seb!"). */
+/** The name on the account, used to greet the learner ("Guten Tag, Dave!"). */
 let name = '';
 try {
   name = localStorage.getItem(NAME_KEY) ?? '';

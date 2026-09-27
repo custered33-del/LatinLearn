@@ -108,7 +108,7 @@ function VoiceSection() {
   );
 }
 
-/** A name on the account, so the app can greet you: “Guten Tag, Seb!”. */
+/** A name on the account, so the app can greet you: “Guten Tag, Dave!”. */
 function NameForm() {
   const { name } = useCloud();
   const [value, setValue] = useState(name);
@@ -136,7 +136,7 @@ function NameForm() {
           id="account-name"
           value={value}
           maxLength={20}
-          placeholder="e.g. Seb"
+          placeholder="e.g. Dave"
           autoComplete="given-name"
           onInput={(e) => {
             setValue(e.currentTarget.value);
