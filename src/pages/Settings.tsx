@@ -35,6 +35,19 @@ import {
 
 const TRY = LANG.sample;
 
+/** What the second voice option is in each language (not every language has a clear free male voice). */
+const SECOND_VOICE: Record<typeof LANG.id, [string, string]> = {
+  la: ['male', 'The same classical pronunciation with a deeper male voice (slightly lower sound quality).'],
+  de: ['alternative', 'Thorsten again, in a higher-quality model. No free female German voice says short words clearly, so both are Thorsten.'],
+  es: ['male', 'A male voice from the same Spanish recordings.'],
+  fr: ['alternative', 'The same speaker, Siwis: the free male French voices mumble short words.'],
+  zh: ['alternative', 'The same speaker: the free male Chinese voice isn’t clear enough yet.'],
+  ar: ['alternative', 'Kareem again, in a lighter model. There’s no free female Arabic voice yet.'],
+  ja: ['male', 'A male voice from the same Japanese recordings.'],
+  ru: ['male', 'Ruslan, a male Russian voice.'],
+  vi: ['alternative', 'The same speaker: the free male Vietnamese voices get the tones wrong.'],
+};
+
 function VoiceSection() {
   const audio = useAudioSettings();
   const ready = useVoiceReady();
@@ -67,12 +80,14 @@ function VoiceSection() {
           <input
             type="radio"
             name="voice"
-            aria-label={`${LANG.app} male voice`}
+            aria-label={`${LANG.app} ${SECOND_VOICE[LANG.id][0]} voice`}
             checked={audio.voice === 'male'}
             onChange={() => setAudioSettings({ voice: 'male' })}
           />
-          <span class="voice-title">{LANG.app} voice, male</span>
-          <span class="voice-desc">The same classical pronunciation with a deeper male voice (slightly lower sound quality).</span>
+          <span class="voice-title">
+            {LANG.app} voice, {SECOND_VOICE[LANG.id][0]}
+          </span>
+          <span class="voice-desc">{SECOND_VOICE[LANG.id][1]}</span>
         </label>
         <label class={cx('voice-option', audio.voice === 'browser' && 'on')}>
           <input

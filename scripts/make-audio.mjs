@@ -33,8 +33,10 @@ const LANGS = {
   de: {
     name: 'German',
     espeak: 'de',
-    female: { model: 'de_DE-kerstin-low', path: 'de/de_DE/kerstin/low/' },
-    male: { model: 'de_DE-thorsten-medium', path: 'de/de_DE/thorsten/medium/' },
+    // Every free female German voice garbles short words ("rot" came out as "Perfekt"), checked with
+    // Whisper on padded clips, so both settings use Thorsten: medium (clearest on short words) first, high second.
+    female: { model: 'de_DE-thorsten-medium', path: 'de/de_DE/thorsten/medium/' },
+    male: { model: 'de_DE-thorsten-high', path: 'de/de_DE/thorsten/high/' },
   },
   es: {
     name: 'Spanish',
@@ -45,8 +47,10 @@ const LANGS = {
   fr: {
     name: 'French',
     espeak: 'fr-fr',
-    female: { model: 'fr_FR-upmc-medium', path: 'fr/fr_FR/upmc/medium/', speaker: 'jessica' },
-    male: { model: 'fr_FR-upmc-medium', path: 'fr/fr_FR/upmc/medium/', speaker: 'pierre' },
+    // siwis is the only French voice that says short words clearly (Whisper on padded clips: siwis 0.69,
+    // upmc jessica 0.16, pierre 0.19, gilles 0.10; tom-medium produced silent clips), so both settings use her.
+    female: { model: 'fr_FR-siwis-medium', path: 'fr/fr_FR/siwis/medium/' },
+    male: { model: 'fr_FR-siwis-medium', path: 'fr/fr_FR/siwis/medium/' },
   },
   zh: {
     name: 'Chinese',
@@ -73,7 +77,8 @@ const LANGS = {
     name: 'Russian',
     espeak: 'ru',
     female: { model: 'ru_RU-irina-medium', path: 'ru/ru_RU/irina/medium/' },
-    male: { model: 'ru_RU-dmitri-medium', path: 'ru/ru_RU/dmitri/medium/' },
+    // ruslan is far clearer than dmitri on short words (да, кто, где).
+    male: { model: 'ru_RU-ruslan-medium', path: 'ru/ru_RU/ruslan/medium/' },
   },
   vi: {
     name: 'Vietnamese',
@@ -361,6 +366,18 @@ async function synth(vc, ipa) {
   return { mp3: Buffer.concat(chunks.filter((c) => c.length).map((c) => Buffer.from(c.buffer, c.byteOffset, c.length))), seconds: len / rate };
 }
 
+/** Windows sometimes locks a file for a moment (virus scanning): wait and try again. */
+function writeRetry(file, data) {
+  for (let tries = 0; ; tries++) {
+    try {
+      return writeFileSync(file, data);
+    } catch (err) {
+      if (tries >= 20) throw err;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250);
+    }
+  }
+}
+
 // --- Record each language ------------------------------------------------------------------
 
 for (const [lang, L] of Object.entries(LANGS)) {
@@ -393,7 +410,7 @@ for (const [lang, L] of Object.entries(LANGS)) {
       const key = Array.isArray(ph) ? ph.join(' ') : ph;
       if (cache[id] === stamp(key) && existsSync(file)) continue;
       const clip = await synth(vc, ph);
-      writeFileSync(file, clip.mp3);
+      writeRetry(file, clip.mp3);
       cache[id] = stamp(key);
       seconds += clip.seconds;
       if (++made % 200 === 0) console.log(`  ${L.name} ${kind}: ${made} clips…`);
