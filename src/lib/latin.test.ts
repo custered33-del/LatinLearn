@@ -127,3 +127,16 @@ describe('toPhonemes (neural voice input)', () => {
     expect(toPhonemes('in hortō')).toBe('in ˈɔrtoː');
   });
 });
+
+describe('speechSimilarity in other scripts', () => {
+  it('scores what recognisers write in every script', () => {
+    expect(speechSimilarity('Привет', 'привет', 'ru')).toBe(1);
+    expect(speechSimilarity('Пока', 'привет', 'ru')).toBeLessThan(0.5);
+    expect(speechSimilarity('リンゴ', 'りんご', 'ja')).toBe(1);
+    expect(speechSimilarity('مرحبا', 'مَرْحَبًا', 'ar')).toBe(1);
+    expect(speechSimilarity('红色', '红色', 'zh')).toBe(1);
+    expect(speechSimilarity('蓝色', '红色', 'zh')).toBe(0.5);
+    expect(speechSimilarity('Xin chao', 'xin chào', 'vi')).toBe(1);
+    expect(speechSimilarity('Guten Tag', 'guten Tag', 'de')).toBe(1);
+  });
+});

@@ -29,6 +29,8 @@ export interface VocabItem {
   numeral?: string;
   /** Shorter label used in the matching game instead of `en`. */
   match?: string;
+  /** Other ways speech recognition may write the word (kanji for Japanese kana, digits for numbers). */
+  alts?: string[];
 }
 
 export interface SoundTip {

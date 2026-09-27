@@ -245,9 +245,19 @@ export function toItalianSpelling(text: string): string {
 }
 
 /** Collapse spelling differences that don't matter when comparing speech transcripts. */
-export function phoneticKey(text: string): string {
+export function phoneticKey(text: string, lang: string = LANG_ID): string {
+  if (lang !== 'la') {
+    // Any script (Cyrillic, Arabic, kana, hanzi…): drop accents, marks and punctuation, collapse doubled letters.
+    return fold(text)
+      .replace(/[\u30a1-\u30f6]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60)) // katakana → hiragana
+      .replace(/ة/g, 'ه')
+      .replace(/ى/g, 'ي')
+      .replace(/ß/g, 'ss')
+      .replace(/đ/g, 'd')
+      .replace(/[^\p{L}\p{N}]/gu, '')
+      .replace(/(.)\1+/gu, '$1');
+  }
   let s = fold(text).replace(/[^a-z]/g, '');
-  if (LANG_ID !== 'la') return s.replace(/(.)+/g, '$1');
   s = s.replace(/ae/g, 'e').replace(/oe/g, 'e');
   s = s.replace(/ph/g, 'f').replace(/th/g, 't').replace(/ch/g, 'k').replace(/h/g, '');
   s = s.replace(/qu/g, 'k').replace(/[cq]/g, 'k');
@@ -271,9 +281,9 @@ export function levenshtein(a: string, b: string): number {
 }
 
 /** 0–1 similarity between what was heard and the target, ignoring spelling quirks. */
-export function speechSimilarity(heard: string, target: string): number {
-  const a = phoneticKey(heard);
-  const b = phoneticKey(target);
+export function speechSimilarity(heard: string, target: string, lang: string = LANG_ID): number {
+  const a = phoneticKey(heard, lang);
+  const b = phoneticKey(target, lang);
   if (!a || !b) return 0;
   return 1 - levenshtein(a, b) / Math.max(a.length, b.length);
 }

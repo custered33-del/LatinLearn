@@ -51,6 +51,7 @@ export function Speak({ course }: { course: Course }) {
   const [finished, setFinished] = useState(false);
   const [live, setLive] = useState('');
   const listening = useRef<Listening | null>(null);
+  const emptyTries = useRef(0);
   const recording = useRef<Recording | null>(null);
 
   const item = items[i];
@@ -92,10 +93,20 @@ export function Speak({ course }: { course: Course }) {
       if (listening.current !== l) return;
       if (!alts.length) {
         setPhase('idle');
-        setError('Didn’t catch anything. Tap the mic, say it, then tap the mic again.');
+        if (++emptyTries.current >= 2) {
+          // The mic works but this browser's recogniser returns nothing (e.g. some Home Screen apps).
+          setError('This browser isn’t turning your voice into words, so we’ve switched to self-check: record yourself and compare with the model.');
+          setMode('self');
+        } else setError('Didn’t catch anything. Tap the mic, say it, then tap the mic again.');
         return;
       }
-      const top = alts.map((heard) => ({ heard, score: speechSimilarity(heard, target) })).sort((a, b) => b.score - a.score)[0];
+      emptyTries.current = 0;
+      // Recognisers may write the word differently: kanji for kana, digits for numbers.
+      const digits = course.id === 'numbers' ? item.id.match(/-(\d+)$/)?.[1] : undefined;
+      const targets = [target, ...(item.alts ?? []), ...(digits ? [digits] : [])];
+      const top = alts
+        .map((heard) => ({ heard, score: Math.max(...targets.map((t) => speechSimilarity(heard, t))) }))
+        .sort((a, b) => b.score - a.score)[0];
       setAttempt({ heard: top.heard, score: top.score });
       score(top.score);
     } catch (err) {
@@ -107,7 +118,9 @@ export function Speak({ course }: { course: Course }) {
       } else if (code === 'no-speech') {
         setError('No speech heard. Tap the mic and try again.');
       } else {
-        setError('Speech checking isn’t available right now. Self-check mode still works.');
+        // e.g. network, service-not-allowed (some Home Screen apps), language-not-supported
+        setError(`This browser’s speech recogniser isn’t working here (${code}). Switched to self-check: record yourself and compare.`);
+        setMode('self');
       }
     } finally {
       if (listening.current === l) listening.current = null;
