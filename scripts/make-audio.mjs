@@ -28,7 +28,8 @@ const LANGS = {
   la: {
     name: 'Latin',
     female: { model: 'it_IT-paola-medium', path: 'it/it_IT/paola/medium/' },
-    male: { model: 'it_IT-riccardo-x_low', path: 'it/it_IT/riccardo/x_low/' },
+    // The only Italian male voice (riccardo x_low) is muddy; the Spanish male reads Latin vowels far more clearly.
+    male: { model: 'es_ES-sharvard-medium', path: 'es/es_ES/sharvard/medium/', speaker: 'M' },
   },
   de: {
     name: 'German',
