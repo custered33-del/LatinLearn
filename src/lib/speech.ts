@@ -280,7 +280,7 @@ function say(latin: string): void {
 // ---------------------------------------------------------------------------
 
 interface RecognitionResultEvent {
-  results: ArrayLike<ArrayLike<{ transcript: string; confidence: number }>>;
+  results: ArrayLike<ArrayLike<{ transcript: string; confidence: number }> & { isFinal?: boolean }>;
 }
 interface Recognition {
   lang: string;
@@ -291,6 +291,7 @@ interface Recognition {
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
   start(): void;
+  stop(): void;
   abort(): void;
 }
 type RecognitionCtor = new () => Recognition;
@@ -304,52 +305,110 @@ const RecognitionImpl: RecognitionCtor | undefined =
 export const recognitionSupported = !!RecognitionImpl;
 
 export interface Listening {
+  /** Everything heard, best guesses first; empty if nothing was heard. */
   result: Promise<string[]>;
+  /** Finish: stop listening and check what was said. */
+  stop: () => void;
+  /** Throw it away. */
   cancel: () => void;
 }
 
 /**
- * Listen for one utterance. Browsers have no Latin model, so we use Italian,
- * whose spelling-to-sound rules are closest, and compare phonetically afterwards.
+ * Listen until the learner taps stop (pauses don't end it). Browsers have no
+ * Latin model, so Latin uses Italian, whose spelling-to-sound rules are
+ * closest, and is compared phonetically afterwards. `onHeard` gets the words
+ * so far, live.
  */
-export function listen(lang = LANG_ID === 'la' ? 'it-IT' : LANG.speech, timeoutMs = 7000): Listening {
-  if (!RecognitionImpl) return { result: Promise.reject(new Error('unsupported')), cancel: () => {} };
+export function listen(onHeard?: (text: string) => void, lang = LANG_ID === 'la' ? 'it-IT' : LANG.speech, maxMs = 30_000): Listening {
+  if (!RecognitionImpl) return { result: Promise.reject(new Error('unsupported')), stop: () => {}, cancel: () => {} };
   const rec = new RecognitionImpl();
   rec.lang = lang;
-  rec.interimResults = false;
-  rec.continuous = false;
+  rec.interimResults = true;
+  rec.continuous = true;
   rec.maxAlternatives = 5;
-  let timer: ReturnType<typeof setTimeout> | undefined;
 
+  // Phones end recognition after a short pause: keep what was heard and restart until stop.
+  const past: string[][] = [];
+  let finals: string[][] = [];
+  let interim = '';
+  let stopped = false;
+  let cancelled = false;
+  const deadline = Date.now() + maxMs;
+  const heard = () =>
+    [...past, ...finals]
+      .map((a) => a[0])
+      .concat(interim)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const result = new Promise<string[]>((resolve, reject) => {
     let settled = false;
-    const done = (fn: () => void) => {
+    const finish = () => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      fn();
+      if (cancelled) return reject(new Error('aborted'));
+      const out = new Set<string>();
+      const all = heard();
+      if (all) out.add(all);
+      for (const alts of [...past, ...finals]) for (const a of alts) if (a) out.add(a);
+      if (interim) out.add(interim);
+      resolve([...out]);
     };
     rec.onresult = (e) => {
-      const alts = Array.from(e.results[0] ?? []).map((a) => a.transcript);
-      done(() => resolve(alts));
+      finals = [];
+      interim = '';
+      for (const r of Array.from(e.results)) {
+        const alts = Array.from(r).map((a) => a.transcript.trim());
+        if (r.isFinal) finals.push(alts);
+        else interim = `${interim} ${alts[0] ?? ''}`.trim();
+      }
+      onHeard?.(heard());
     };
-    rec.onerror = (e) => done(() => reject(new Error(e.error)));
-    rec.onend = () => done(() => resolve([]));
+    rec.onerror = (e) => {
+      if (e.error === 'no-speech' || e.error === 'aborted') return; // onend follows
+      settled = true;
+      clearTimeout(timer);
+      reject(new Error(e.error));
+    };
+    rec.onend = () => {
+      if (!stopped && !cancelled && Date.now() < deadline) {
+        past.push(...finals);
+        if (interim) past.push([interim]);
+        finals = [];
+        interim = '';
+        try {
+          rec.start();
+          return;
+        } catch {
+          /* couldn't restart: finish with what we have */
+        }
+      }
+      finish();
+    };
     timer = setTimeout(() => {
-      rec.abort();
-      done(() => resolve([]));
-    }, timeoutMs);
+      stopped = true;
+      rec.stop();
+    }, maxMs);
     try {
       rec.start();
     } catch (err) {
-      done(() => reject(err as Error));
+      settled = true;
+      clearTimeout(timer);
+      reject(err as Error);
     }
   });
 
   return {
     result,
+    stop: () => {
+      stopped = true;
+      rec.stop();
+    },
     cancel: () => {
-      clearTimeout(timer);
+      cancelled = true;
       rec.abort();
     },
   };

@@ -21,7 +21,7 @@ import { NextLink } from './Course';
 
 const SESSION = 8;
 type Mode = 'auto' | 'self';
-type Phase = 'idle' | 'listening' | 'recording' | 'result';
+type Phase = 'idle' | 'listening' | 'checking' | 'recording' | 'result';
 
 function pickItems(course: Course): VocabItem[] {
   const words = getProgress().words;
@@ -49,6 +49,7 @@ export function Speak({ course }: { course: Course }) {
   const [error, setError] = useState<string | null>(null);
   const [clip, setClip] = useState<string | null>(null);
   const [finished, setFinished] = useState(false);
+  const [live, setLive] = useState('');
   const listening = useRef<Listening | null>(null);
   const recording = useRef<Recording | null>(null);
 
@@ -83,14 +84,15 @@ export function Speak({ course }: { course: Course }) {
     setError(null);
     setAttempt(null);
     setPhase('listening');
-    const l = listen();
+    setLive('');
+    const l = listen(setLive);
     listening.current = l;
     try {
       const alts = await l.result;
       if (listening.current !== l) return;
       if (!alts.length) {
         setPhase('idle');
-        setError('Didn’t catch that. Tap the mic and speak clearly.');
+        setError('Didn’t catch anything. Tap the mic, say it, then tap the mic again.');
         return;
       }
       const top = alts.map((heard) => ({ heard, score: speechSimilarity(heard, target) })).sort((a, b) => b.score - a.score)[0];
@@ -110,6 +112,13 @@ export function Speak({ course }: { course: Course }) {
     } finally {
       if (listening.current === l) listening.current = null;
     }
+  };
+
+  /** Tapping the mic again: finish and check what was said. */
+  const finishListening = () => {
+    if (!listening.current) return;
+    listening.current.stop();
+    setPhase('checking');
   };
 
   const stopListening = () => {
@@ -244,14 +253,26 @@ export function Speak({ course }: { course: Course }) {
             <button
               type="button"
               class={cx('mic', phase === 'listening' && 'live')}
-              onClick={phase === 'listening' ? stopListening : startListening}
-              aria-label={phase === 'listening' ? 'Stop listening' : 'Start speaking'}
+              onClick={phase === 'listening' ? finishListening : startListening}
+              disabled={phase === 'checking'}
+              aria-label={phase === 'listening' ? 'Finished speaking: check it' : 'Start speaking'}
             >
               <Icon name={phase === 'listening' ? 'stop' : 'mic'} size={34} />
             </button>
             <p class="mic-label" aria-live="polite">
-              {phase === 'listening' ? 'Listening… say it now' : phase === 'result' ? 'Tap to try again' : 'Tap the mic and say it'}
+              {phase === 'listening'
+                ? 'Listening… say it, then tap the mic again when you’ve finished'
+                : phase === 'checking'
+                  ? 'Checking…'
+                  : phase === 'result'
+                    ? 'Tap the mic to try again'
+                    : 'Tap the mic, say it, then tap the mic again'}
             </p>
+            {phase === 'listening' && live && (
+              <p class="heard">
+                Hearing: “<span lang={L}>{live}</span>”
+              </p>
+            )}
           </>
         ) : (
           <div class="self-check">
