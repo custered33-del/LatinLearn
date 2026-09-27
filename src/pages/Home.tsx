@@ -8,7 +8,8 @@ import { courseStats, overallStats, suggestNext, type CourseStats } from '../lib
 import { toRoman } from '../lib/numerals';
 import { currentStreak, dayKey, useProgress } from '../lib/progress';
 import { href } from '../router';
-import { L, LANG } from '../lang';
+import { L, LANG, greeting } from '../lang';
+import { useCloud } from '../lib/cloud';
 
 function Stat({ icon, value, label }: { icon: IconName; value: string | number; label: string }) {
   return (
@@ -137,6 +138,8 @@ function DailyCard() {
 
 export function Home() {
   const p = useProgress();
+  const { name } = useCloud();
+  const [hi, hiEn] = greeting();
   useTitle('');
   const overall = overallStats(p);
   const next = suggestNext(p);
@@ -147,9 +150,19 @@ export function Home() {
     <div class="container home">
       <section class="hero">
         <div class="hero-text">
-          <p class="eyebrow">
-            <span lang={L}>{LANG.hello.replace(/[!¡ ]/g, '')}</span>. Welcome to {LANG.app}
-          </p>
+          {name ? (
+            <p class="hello-name">
+              <span>
+                <span lang={L}>{hi}</span>, {name}!
+              </span>
+              <span aria-hidden="true">👋</span>
+              <span class="hello-en">{hiEn}</span>
+            </p>
+          ) : (
+            <p class="eyebrow">
+              <span lang={L}>{LANG.hello.replace(/[!¡ ]/g, '')}</span>. Welcome to {LANG.app}
+            </p>
+          )}
           <h1 class="display">
             Speak the language of <span class="grad">{LANG.place}</span>.
           </h1>

@@ -27,6 +27,14 @@ try {
 } catch {
   /* storage blocked */
 }
+const NAME_KEY = 'latinlearn:name';
+/** The name on the account, used to greet the learner ("Guten Tag, Seb!"). */
+let name = '';
+try {
+  name = localStorage.getItem(NAME_KEY) ?? '';
+} catch {
+  /* storage blocked */
+}
 const listeners = new Set<() => void>();
 const setStatus = (s: CloudStatus) => {
   status = s;
@@ -42,7 +50,30 @@ export function subscribeCloud(fn: () => void): () => void {
 export const formatCode = (c: string) => `${c.slice(0, 3)} ${c.slice(3, 6)} ${c.slice(6)}`;
 export const isCode = (c: string) => /^\d{10}$/.test(c);
 
-export function useCloud(): { code: string | null; status: CloudStatus } {
+export const accountName = () => name;
+
+function rememberName(n: string) {
+  if (n === name) return;
+  name = n;
+  try {
+    if (n) localStorage.setItem(NAME_KEY, n);
+    else localStorage.removeItem(NAME_KEY);
+  } catch {
+    /* session only */
+  }
+  listeners.forEach((fn) => fn());
+}
+
+/** Save a name on the logged-in account (up to 20 characters). */
+export async function setAccountName(input: string): Promise<void> {
+  const clean = input.trim().replace(/\s+/g, ' ').slice(0, 20);
+  if (!code) throw new Error('not logged in');
+  const r = await fetch(`${CLOUD_URL}/saves/${code}/name.json`, clean ? { method: 'PUT', body: JSON.stringify(clean) } : { method: 'DELETE' });
+  if (!r.ok) throw new Error(`cloud ${r.status}`);
+  rememberName(clean);
+}
+
+export function useCloud(): { code: string | null; status: CloudStatus; name: string } {
   const [, force] = useReducer((n: number) => n + 1, 0);
   useEffect(() => {
     listeners.add(force as () => void);
@@ -50,7 +81,7 @@ export function useCloud(): { code: string | null; status: CloudStatus } {
       listeners.delete(force as () => void);
     };
   }, []);
-  return { code, status };
+  return { code, status, name };
 }
 
 const url = (c: string) => `${CLOUD_URL}/saves/${c}.json`;
@@ -58,9 +89,10 @@ const url = (c: string) => `${CLOUD_URL}/saves/${c}.json`;
 async function download(c: string): Promise<Partial<Saves> | null | 'missing'> {
   const r = await fetch(url(c), { cache: 'no-store' });
   if (!r.ok) throw new Error(`cloud ${r.status}`);
-  const data = (await r.json()) as { app?: string; progress?: unknown; langs?: Record<string, unknown> } | null;
+  const data = (await r.json()) as { app?: string; progress?: unknown; langs?: Record<string, unknown>; name?: unknown } | null;
   if (!data) return 'missing';
   if (data.app !== APP) return null;
+  if (c === code || !code) rememberName(typeof data.name === 'string' ? data.name : '');
   const out: Partial<Saves> = {};
   for (const id of IDS) {
     const p = sanitize(id === 'la' ? data.progress : data.langs?.[id]);
@@ -133,6 +165,7 @@ function remember(c: string | null) {
 function wipeDevice() {
   for (const id of IDS) writeStored(id, emptyProgress());
   remember(null);
+  rememberName('');
   lastSynced = '';
   setStatus({ state: 'off' });
 }

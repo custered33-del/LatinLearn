@@ -1,8 +1,8 @@
-import { L, LANG } from '../lang';
+import { L, LANG, greeting } from '../lang';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { COURSES, courseById } from '../data/courses';
 import type { CourseId } from '../data/types';
-import { cloudEnabled, createCode, formatCode, logIn, logOut, syncNow, useCloud } from '../lib/cloud';
+import { accountName, cloudEnabled, createCode, formatCode, logIn, logOut, setAccountName, syncNow, useCloud } from '../lib/cloud';
 import { Icon } from '../components/Icon';
 import {
   compPhase,
@@ -108,6 +108,60 @@ function VoiceSection() {
   );
 }
 
+/** A name on the account, so the app can greet you: “Guten Tag, Seb!”. */
+function NameForm() {
+  const { name } = useCloud();
+  const [value, setValue] = useState(name);
+  const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  useEffect(() => setValue(name), [name]); // arrives from the cloud after logging in
+  const [hi] = greeting();
+  const shown = value.trim() || name;
+  return (
+    <form
+      class="name-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setState('saving');
+        setAccountName(value).then(
+          () => setState('saved'),
+          () => setState('error'),
+        );
+      }}
+    >
+      <label class="name-label" for="account-name">
+        Your name
+      </label>
+      <div class="cloud-login">
+        <input
+          id="account-name"
+          value={value}
+          maxLength={20}
+          placeholder="e.g. Seb"
+          autoComplete="given-name"
+          onInput={(e) => {
+            setValue(e.currentTarget.value);
+            setState('idle');
+          }}
+        />
+        <button type="submit" class="btn btn-ghost" disabled={state === 'saving' || value.trim() === name}>
+          {state === 'saving' ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+      <p class="muted small" aria-live="polite">
+        {state === 'error'
+          ? 'Couldn’t save. Check your internet and try again.'
+          : shown
+            ? (
+              <>
+                {state === 'saved' ? 'Saved! ' : ''}The app will greet you: <b lang={L}>{hi}</b>, <b>{shown}</b>!
+              </>
+            )
+            : `Add your name and ${LANG.app} will greet you in ${LANG.language}.`}
+      </p>
+    </form>
+  );
+}
+
 function CloudSection() {
   const { code, status } = useCloud();
   const [input, setInput] = useState('');
@@ -146,6 +200,7 @@ function CloudSection() {
                   : 'Syncs automatically.'}{' '}
             Keep the code private: anyone with it can see and change this progress.
           </p>
+          <NameForm />
           <div class="btn-row">
             <button type="button" class="btn btn-ghost btn-sm" disabled={busy} onClick={() => void run(syncNow)}>
               <Icon name="refresh" size={14} /> Sync now
@@ -467,7 +522,7 @@ function FamilySection() {
   const { account, mine, data } = useFamily();
   const [name, setName] = useState(() => {
     try {
-      return localStorage.getItem(NAME_KEY) ?? '';
+      return localStorage.getItem(NAME_KEY) ?? accountName();
     } catch {
       return '';
     }

@@ -15,7 +15,8 @@ import {
   type QuizQ,
   type Reply,
 } from '../lib/auxilium';
-import { LANG } from '../lang';
+import { LANG, greeting } from '../lang';
+import { accountName } from '../lib/cloud';
 import { MASTERED } from '../lib/mastery';
 import { getProgress } from '../lib/progress';
 import './auxilium.css';
@@ -47,7 +48,7 @@ export function Auxilium() {
   const [log, setLog] = useState<Msg[]>(() => [
     {
       who: 'aux',
-      text: `_${LANG.hello}_ I’m **Auxilium**, your ${LANG.language} practice buddy. I can quiz you, explain words, conjugate verbs and more. What shall we do?`,
+      text: `_${accountName() ? `${greeting()[0]}, ${accountName()}!` : LANG.hello}_ I’m **Auxilium**, your ${LANG.language} practice buddy. I can quiz you, explain words, conjugate verbs and more. What shall we do?`,
       say: LANG.hello,
       chips: START_CHIPS,
     },

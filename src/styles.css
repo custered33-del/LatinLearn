@@ -4172,3 +4172,28 @@ a.icon-btn {
   font-size: 14px;
   opacity: 0.75;
 }
+
+/* Greeting with the account name */
+.hello-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin: 0 0 6px;
+  font: 600 clamp(20px, 3.4vw, 26px) / 1.2 var(--font-display);
+  color: var(--accent);
+}
+.hello-en {
+  font: 500 13px var(--font-ui);
+  color: var(--ink-2, inherit);
+  opacity: 0.7;
+}
+.name-form {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+.name-label {
+  font-weight: 600;
+  font-size: 14px;
+}

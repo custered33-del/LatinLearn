@@ -221,6 +221,36 @@ export const LANGS: Record<LangId, LangInfo> = {
   },
 };
 
+const GREETINGS: Record<LangId, [string, string, string]> = {
+  la: ['Salvē', 'Salvē', 'Salvē'],
+  de: ['Guten Morgen', 'Guten Tag', 'Guten Abend'],
+  es: ['Buenos días', 'Buenas tardes', 'Buenas noches'],
+  fr: ['Bonjour', 'Bonjour', 'Bonsoir'],
+  zh: ['早上好', '你好', '晚上好'],
+  ar: ['صَبَاحُ الخَيْر', 'مَرْحَبًا', 'مَسَاءُ الخَيْر'],
+  ja: ['おはよう', 'こんにちは', 'こんばんは'],
+  ru: ['Доброе утро', 'Добрый день', 'Добрый вечер'],
+  vi: ['Chào buổi sáng', 'Xin chào', 'Chào buổi tối'],
+};
+const GREETING_EN: Record<LangId, [string, string, string]> = {
+  la: ['Hello', 'Hello', 'Hello'],
+  de: ['Good morning', 'Good afternoon', 'Good evening'],
+  es: ['Good morning', 'Good afternoon', 'Good evening'],
+  fr: ['Good morning', 'Hello', 'Good evening'],
+  zh: ['Good morning', 'Hello', 'Good evening'],
+  ar: ['Good morning', 'Hello', 'Good evening'],
+  ja: ['Good morning', 'Hello', 'Good evening'],
+  ru: ['Good morning', 'Good afternoon', 'Good evening'],
+  vi: ['Good morning', 'Hello', 'Good evening'],
+};
+
+/** A greeting for the time of day in this language, and what it means: ['Guten Abend', 'Good evening']. */
+export function greeting(date = new Date()): [string, string] {
+  const h = date.getHours();
+  const i = h < 12 ? 0 : h < 18 ? 1 : 2;
+  return [GREETINGS[LANG_ID][i], GREETING_EN[LANG_ID][i]];
+}
+
 const KEY = 'latinlearn:lang';
 const isLang = (x: unknown): x is LangId => typeof x === 'string' && x in LANGS;
 
