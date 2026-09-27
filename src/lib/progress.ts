@@ -18,6 +18,14 @@ export interface ChallengeResult {
   plays: number;
 }
 
+/** The daily lesson's memory: its adaptive difficulty and minutes practised each day. */
+export interface DailyState {
+  /** 1 (gentle) to 10 (hardest); moves up and down with every answer. */
+  level: number;
+  /** Minutes practised in daily lessons, keyed by day. */
+  days: Record<string, number>;
+}
+
 export interface Progress {
   /** Word strength 0–5, keyed by vocab id. */
   words: Record<string, number>;
@@ -30,6 +38,7 @@ export interface Progress {
   streak: number;
   lastDay: string;
   last?: { course: CourseId; step: StepId };
+  daily?: DailyState;
 }
 
 const BASE_KEY = 'latinlearn:progress:v2';
@@ -137,7 +146,14 @@ export function mergeProgress(a: Progress, b: Progress): Progress {
     challenges[id] = o ? { stars: Math.max(o.stars, r.stars), best: Math.max(o.best, r.best), plays: Math.max(o.plays, r.plays) } : r;
   }
   const newer = b.lastDay > a.lastDay || (b.lastDay === a.lastDay && b.streak > a.streak) ? b : a;
+  let daily = newer.daily ?? a.daily ?? b.daily;
+  if (a.daily && b.daily && daily) {
+    const days = { ...a.daily.days };
+    for (const [d, m] of Object.entries(b.daily.days)) days[d] = Math.max(days[d] ?? 0, m);
+    daily = { level: daily.level, days };
+  }
   return {
+    ...(daily ? { daily } : {}),
     words,
     courses,
     challenges,
@@ -284,6 +300,14 @@ export const actions = {
   visit(course: CourseId, step: StepId): void {
     if (state.last?.course === course && state.last.step === step) return;
     commit({ ...state, last: { course, step } });
+  },
+
+  /** Save the daily lesson's level and today's minutes; `bonus` XP is paid when the 10 minutes are first reached. */
+  recordDaily(level: number, minutes: number, bonus = 0): void {
+    const d = state.daily ?? { level, days: {} };
+    const today = dayKey();
+    const days = { ...d.days, [today]: Math.max(d.days[today] ?? 0, minutes) };
+    commit(withXP({ ...state, daily: { level: Math.round(level * 100) / 100, days } }, bonus));
   },
 
   reset(): void {

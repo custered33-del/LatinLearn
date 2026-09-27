@@ -60,6 +60,7 @@ const LazyAuxilium = lazyPage<object>(
   'Waking up Auxilium',
 );
 
+const LazyDaily = lazyPage<object>(() => import('./pages/Daily').then((m) => m.Daily), 'Building today’s lesson');
 const LazyCompete = lazyPage<object>(() => import('./pages/Compete').then((m) => m.Compete), 'Getting the battle ready');
 
 /** A strip under the header while the family is voting, or it's your turn in a speed battle. */
@@ -148,6 +149,9 @@ export function App() {
   } else if (section === 'auxilium' && !id) {
     nav = '';
     page = <LazyAuxilium />;
+  } else if (section === 'daily' && !id) {
+    nav = '';
+    page = <LazyDaily />;
   } else if (section === 'compete' && !id) {
     nav = '';
     page = <LazyCompete />;
@@ -175,13 +179,13 @@ export function App() {
         Skip to content
       </a>
       <Header section={nav} />
-      {section !== 'compete' && !step && <BattleBanner />}
+      {section !== 'compete' && section !== 'daily' && !step && <BattleBanner />}
       <main id="main" ref={main} tabIndex={-1} class="page" key={pageKey}>
         {page}
       </main>
       <Footer />
       {/* Floating helper, hidden inside drills and games where it could cover buttons. */}
-      {section !== 'auxilium' && !step && (
+      {section !== 'auxilium' && section !== 'daily' && !step && (
         <a class="aux-fab" href={href('auxilium')} aria-label={`Ask Auxilium, your ${LANG.language} practice buddy`}>
           <Icon name="chat" size={22} />
           <span>Auxilium</span>

@@ -12,7 +12,7 @@ import { buildQuiz, type Question } from '../lib/quiz';
 import { speak, ttsSupported } from '../lib/speech';
 import { href } from '../router';
 import { NextLink } from './Course';
-import { L, LANG } from '../lang';
+import { L, LANG, LANG_ID } from '../lang';
 
 const KICKER: Record<string, string> = {
   'la-en': 'Translate',
@@ -22,7 +22,12 @@ const KICKER: Record<string, string> = {
   type: 'Spelling',
 };
 
-const MACRONS = ['ā', 'ē', 'ī', 'ō', 'ū'];
+const MACRONS = {
+  la: ['ā', 'ē', 'ī', 'ō', 'ū'],
+  de: ['ä', 'ö', 'ü', 'ß'],
+  es: ['á', 'é', 'í', 'ó', 'ú', 'ñ'],
+  fr: ['é', 'è', 'ê', 'à', 'ç', 'ô'],
+}[LANG_ID];
 
 const answerText = (q: Question): string => (q.kind === 'choice' ? q.options[q.answer] : q.solution);
 
@@ -265,7 +270,7 @@ export function Quiz({ course }: { course: Course }) {
               lang={L}
             />
             <div class="macron-row">
-              <span class="muted small">Macrons optional:</span>
+              <span class="muted small">{LANG_ID === 'la' ? 'Macrons' : 'Accents'} optional:</span>
               {MACRONS.map((m) => (
                 <button type="button" key={m} class="macron" onClick={() => insertMacron(m)} disabled={answered} aria-label={`Insert ${m}`}>
                   {m}

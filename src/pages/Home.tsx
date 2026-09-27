@@ -112,6 +112,29 @@ function WordOfTheDay() {
   );
 }
 
+/** Today's personalised 10-minute lesson. */
+function DailyCard() {
+  const p = useProgress();
+  const minutes = Math.min(10, p.daily?.days[dayKey()] ?? 0);
+  const done = minutes >= 10;
+  const level = p.daily?.level;
+  return (
+    <a class={cx('daily-card', done && 'done')} href={href('daily')}>
+      <span class="daily-ring" style={{ '--pct': `${minutes * 10}%` }} aria-hidden="true">
+        <span>{done ? '✓' : `${minutes}′`}</span>
+      </span>
+      <span class="daily-text">
+        <span class="eyebrow">Daily lesson · 10 min</span>
+        <b>{done ? 'Done for today! Your streak is safe 🔥' : minutes > 0 ? `${10 - minutes} minutes to go today` : 'Your 10-minute lesson is ready'}</b>
+        <span class="muted small">
+          Made for you{level ? ` at level ${level.toFixed(1)}` : ''}: weak words first, new ones as you’re ready. It adapts as you learn.
+        </span>
+      </span>
+      <span class="btn btn-primary">{done ? 'More' : minutes > 0 ? 'Carry on' : 'Start'}</span>
+    </a>
+  );
+}
+
 export function Home() {
   const p = useProgress();
   useTitle('');
@@ -149,6 +172,8 @@ export function Home() {
         </div>
         <WordOfTheDay />
       </section>
+
+      <DailyCard />
 
       <section class="stats" aria-label="Your progress">
         <Stat icon="flame" value={streak} label={streak === 1 ? 'day streak' : 'days streak'} />

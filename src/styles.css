@@ -3667,3 +3667,93 @@ a.icon-btn {
 .family-list li.waiting {
   opacity: 0.6;
 }
+
+/* Daily lesson */
+.daily-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 8px 0 24px;
+  padding: 16px 20px;
+  border-radius: 20px;
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+.daily-card:hover {
+  transform: translateY(-2px);
+}
+.daily-card.done {
+  border-style: dashed;
+}
+.daily-ring {
+  --pct: 0%;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) var(--pct), var(--line-2) 0);
+}
+.daily-ring span {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--card);
+  font-weight: 700;
+}
+.daily-text {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.daily-text b {
+  font-size: 18px;
+}
+.daily-text .eyebrow {
+  margin: 0;
+}
+@media (max-width: 560px) {
+  .daily-card {
+    flex-wrap: wrap;
+  }
+  .daily-card .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+.daily-start {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+}
+.daily-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+.daily-facts div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  text-align: center;
+}
+.daily-facts b {
+  font: 700 26px/1.1 var(--font-display);
+}
+.daily-facts span {
+  font-size: 12px;
+}
+.daily-new {
+  font-size: 1.3em;
+}
