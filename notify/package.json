@@ -1,0 +1,9 @@
+{
+  "name": "latinlearn-notify",
+  "private": true,
+  "description": "Sends LatinLearn push notifications (streak saver, daily reminder, miss-you, test).",
+  "type": "module",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

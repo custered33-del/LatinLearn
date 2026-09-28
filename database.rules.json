@@ -68,6 +68,80 @@
         }
       }
     },
+    "push": {
+      "$id": {
+        ".write": "$id.matches(/^[a-z0-9]{20}$/)",
+        ".validate": "newData.child('sub').child('endpoint').isString() && newData.child('tz').isString()",
+        "sub": {
+          "endpoint": {
+            ".validate": "newData.isString() && newData.val().length < 1000 && newData.val().matches(/^https:\\/\\/(fcm\\.googleapis\\.com|[a-z0-9.-]+\\.push\\.apple\\.com|[a-z0-9.-]+\\.mozilla\\.com|[a-z0-9.-]+\\.notify\\.windows\\.com)\\//)"
+          },
+          "keys": {
+            "p256dh": {
+              ".validate": "newData.isString() && newData.val().length <= 200"
+            },
+            "auth": {
+              ".validate": "newData.isString() && newData.val().length <= 100"
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "prefs": {
+          "streak": {
+            ".validate": "newData.isBoolean()"
+          },
+          "daily": {
+            ".validate": "newData.isBoolean()"
+          },
+          "away": {
+            ".validate": "newData.isBoolean()"
+          },
+          "hour": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 23"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "sent": {
+          "$kind": {
+            ".validate": "newData.isNumber() || newData.isString()"
+          }
+        },
+        "lang": {
+          ".validate": "newData.isString() && newData.val().length <= 5"
+        },
+        "app": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "language": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "hello": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "tz": {
+          ".validate": "newData.isString() && newData.val().length <= 64"
+        },
+        "streak": {
+          ".validate": "newData.isNumber()"
+        },
+        "lastDay": {
+          ".validate": "newData.isString() && newData.val().length <= 10"
+        },
+        "seen": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
     "status": {
       ".read": true
     }

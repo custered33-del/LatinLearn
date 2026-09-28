@@ -63,3 +63,39 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   e.respondWith(req.mode === 'navigate' ? networkFirst(req) : cacheFirst(req));
 });
+
+// Notifications (streak saver, daily reminder, "we miss you", tests) sent by notify/send.mjs.
+self.addEventListener('push', (e) => {
+  let d = {};
+  try {
+    d = e.data ? e.data.json() : {};
+  } catch {
+    d = { body: e.data ? e.data.text() : '' };
+  }
+  e.waitUntil(
+    self.registration.showNotification(d.title || 'LatinLearn', {
+      body: d.body || '',
+      icon: d.icon || './icon-192.png',
+      badge: d.icon || './icon-192.png',
+      tag: d.tag,
+      data: { url: d.url || '#/' },
+    }),
+  );
+});
+
+// Tapping a notification opens the app (or brings it to the front) on the right page.
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = new URL(e.notification.data?.url || '#/', self.registration.scope).href;
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if ('focus' in c) {
+          if ('navigate' in c) c.navigate(url).catch(() => undefined);
+          return c.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
+});

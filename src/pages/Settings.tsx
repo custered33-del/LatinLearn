@@ -19,6 +19,7 @@ import {
   type FamilyData,
 } from '../lib/family';
 import { addFriend, formatFriendId, refreshBoard, refreshFriends, removeFriend, useFriends } from '../lib/friends';
+import { disablePush, enablePush, pushSupport, setPushPrefs, usePush, type PushPrefs } from '../lib/push';
 import { href } from '../router';
 import { LanguagePicker } from '../components/Layout';
 import { cx, useTitle } from '../lib/hooks';
@@ -436,10 +437,11 @@ export function Settings() {
     <div class="container settings-page">
       <header class="page-head">
         <p class="eyebrow">Settings</p>
-        <h1>Voice and saving</h1>
+        <h1>You and your settings</h1>
       </header>
       <div class="settings-grid">
         <CloudSection />
+        <NotificationsSection />
         <FamilySection />
         <FriendsSection />
         <LeaderboardSection />
@@ -703,6 +705,114 @@ function FamilySection() {
               }}
             >
               Leave family
+            </button>
+          </div>
+        </>
+      )}
+      <div aria-live="polite">{msg && <p class={cx('save-msg', msg.ok ? 'good' : 'bad')}>{msg.text}</p>}</div>
+    </section>
+  );
+}
+
+const PUSH_KINDS: [keyof Omit<PushPrefs, 'hour'>, string, string][] = [
+  ['streak', 'Streak saver', 'An hour before your streak runs out.'],
+  ['daily', 'Daily reminder', 'If you haven’t practised yet that day.'],
+  ['away', 'We miss you', 'If you haven’t been on for a few days.'],
+];
+const hourLabel = (h: number) => new Date(2000, 0, 1, h).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+/** Turn on notifications (streak saver, daily reminder, "we miss you"). */
+function NotificationsSection() {
+  const { on, prefs } = usePush();
+  const support = pushSupport();
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      await fn();
+    } catch {
+      setMsg({ ok: false, text: 'Couldn’t turn notifications on. Check your internet and try again.' });
+    }
+    setBusy(false);
+  };
+  const change = (next: PushPrefs) => void run(() => setPushPrefs(next));
+
+  return (
+    <section class="panel settings-block family" aria-labelledby="push-h">
+      <h2 id="push-h" class="h-sm">
+        <Icon name="clock" size={18} /> Notifications
+      </h2>
+      {support === 'ios-install' ? (
+        <p class="muted">
+          On iPhone, notifications only work in the Home Screen app. Add {LANG.app} to your Home Screen (Share, then <b>Add to Home Screen</b>), open it
+          from there, then turn them on here.
+        </p>
+      ) : support === 'no' ? (
+        <p class="muted">This browser can’t show notifications. Open {LANG.app} online (or from your Home Screen) to turn them on.</p>
+      ) : !on ? (
+        <>
+          <p class="muted">Get a nudge so you never lose your streak:</p>
+          <ul class="push-kinds">
+            {PUSH_KINDS.map(([k, title, text]) => (
+              <li key={k}>
+                <b>{title}:</b> {text}
+              </li>
+            ))}
+          </ul>
+          {Notification.permission === 'denied' && (
+            <p class="muted small">Notifications are blocked for {LANG.app}. Allow them in your phone or browser settings, then try again.</p>
+          )}
+          <div class="btn-row">
+            <button
+              type="button"
+              class="btn btn-primary"
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  const r = await enablePush();
+                  setMsg(
+                    r === 'ok'
+                      ? { ok: true, text: 'Notifications are on! 🔔' }
+                      : { ok: false, text: `Notifications weren’t allowed. Allow them for ${LANG.app} in your settings, then try again.` },
+                  );
+                })
+              }
+            >
+              <Icon name="sparkle" size={18} /> Turn on notifications
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div class="push-options">
+            {PUSH_KINDS.map(([k, title, text]) => (
+              <label key={k} class="push-option">
+                <input type="checkbox" checked={prefs[k]} disabled={busy} onChange={(e) => change({ ...prefs, [k]: e.currentTarget.checked })} />
+                <span>
+                  <b>{title}</b>
+                  <small class="muted">{text}</small>
+                </span>
+              </label>
+            ))}
+          </div>
+          {prefs.daily && (
+            <label class="push-time">
+              Remind me at
+              <select value={prefs.hour} disabled={busy} onChange={(e) => change({ ...prefs, hour: Number(e.currentTarget.value) })}>
+                {Array.from({ length: 15 }, (_, i) => i + 7).map((h) => (
+                  <option key={h} value={h}>
+                    {hourLabel(h)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <div class="btn-row">
+            <button type="button" class="btn btn-ghost btn-sm" disabled={busy} onClick={() => void run(disablePush)}>
+              Turn off notifications
             </button>
           </div>
         </>

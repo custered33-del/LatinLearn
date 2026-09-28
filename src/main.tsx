@@ -10,6 +10,7 @@ import { loadVoice } from './lib/speech';
 import './lib/cloud';
 import './lib/family';
 import './lib/friends';
+import './lib/push';
 
 applyLanguage();
 const root = document.getElementById('app')!;
