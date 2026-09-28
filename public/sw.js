@@ -50,7 +50,8 @@ async function cacheFirst(req) {
 async function networkFirst(req) {
   const cache = await caches.open(CACHE);
   try {
-    const res = await fetch(req);
+    // no-cache: always check for a new version (GitHub Pages otherwise lets browsers reuse the page for 10 minutes).
+    const res = await fetch(req, { cache: 'no-cache' });
     if (res.ok) await cache.put('./index.html', res.clone());
     return res;
   } catch {
