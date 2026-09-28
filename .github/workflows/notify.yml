@@ -6,7 +6,8 @@ name: Send notifications
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    # Off the busy quarter-hour marks, which GitHub often delays or skips.
+    - cron: '4,19,34,49 * * * *'
   workflow_dispatch:
 
 permissions:
