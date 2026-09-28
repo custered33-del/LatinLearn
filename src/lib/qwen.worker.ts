@@ -6,19 +6,21 @@ let engine: MLCEngine | null = null;
 let loaded: string | null = null;
 
 self.onmessage = async (e: MessageEvent) => {
-  const { id, type, model, messages } = e.data as {
+  const { id, type, model, messages, opts } = e.data as {
     id: number;
     type: 'load' | 'chat' | 'delete';
     model?: string;
+    opts?: { context_window_size: number; prefill_chunk_size: number };
     messages?: { role: 'system' | 'user' | 'assistant'; content: string }[];
   };
   try {
     if (type === 'load') {
       engine ??= new MLCEngine();
       engine.setInitProgressCallback((r) => postMessage({ id, progress: r.progress, text: r.text }));
-      if (loaded !== model) {
-        await engine.reload(model!);
-        loaded = model!;
+      const key = `${model}|${JSON.stringify(opts)}`;
+      if (loaded !== key) {
+        await engine.reload(model!, opts);
+        loaded = key;
       }
       postMessage({ id, done: true });
     } else if (type === 'chat') {
@@ -31,7 +33,7 @@ self.onmessage = async (e: MessageEvent) => {
       });
       postMessage({ id, done: true, result: r.choices[0]?.message?.content ?? '' });
     } else if (type === 'delete') {
-      if (engine && loaded === model) {
+      if (engine && loaded?.startsWith(`${model}|`)) {
         await engine.unload();
         loaded = null;
       }

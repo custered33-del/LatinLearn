@@ -22,8 +22,8 @@ export const QWEN_MODELS: QwenModel[] = [
   { key: 'qwen2.5-0.5b', name: 'Qwen2.5 0.5B', f16: 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC', f32: 'Qwen2.5-0.5B-Instruct-q4f32_1-MLC', mb: 278, note: 'The lightest, for older phones. Fast but makes lots of mistakes.' },
   { key: 'qwen3-0.6b', name: 'Qwen3 0.6B', f16: 'Qwen3-0.6B-q4f16_1-MLC', f32: 'Qwen3-0.6B-q4f32_1-MLC', mb: 335, note: 'Tiny and quick. Still makes lots of mistakes.' },
   { key: 'qwen2.5-1.5b', name: 'Qwen2.5 1.5B', f16: 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC', f32: 'Qwen2.5-1.5B-Instruct-q4f32_1-MLC', mb: 869, note: 'The smallest that gives sensible answers. Newer phones and most computers.', recommended: true },
-  { key: 'qwen3-4b', name: 'Qwen3 4B', f16: 'Qwen3-4B-q4f16_1-MLC', f32: 'Qwen3-4B-q4f32_1-MLC', mb: 2263, note: 'Much smarter. Needs a good computer.', big: true },
-  { key: 'qwen2.5-7b', name: 'Qwen2.5 7B', f16: 'Qwen2.5-7B-Instruct-q4f16_1-MLC', f32: 'Qwen2.5-7B-Instruct-q4f32_1-MLC', mb: 4284, note: 'The best. Needs a strong gaming PC with 8 GB of graphics memory.', big: true },
+  { key: 'qwen3-4b', name: 'Qwen3 4B', f16: 'Qwen3-4B-q4f16_1-MLC', f32: 'Qwen3-4B-q4f32_1-MLC', mb: 2263, note: 'Much smarter. Needs a good computer or a recent Pro iPhone.', big: true },
+  { key: 'qwen2.5-7b', name: 'Qwen2.5 7B', f16: 'Qwen2.5-7B-Instruct-q4f16_1-MLC', f32: 'Qwen2.5-7B-Instruct-q4f32_1-MLC', mb: 4284, note: 'The best. Needs a strong PC (8 GB graphics memory). Too big for Safari on iPhone.', big: true },
 ];
 export const DEFAULT_QWEN = QWEN_MODELS.find((m) => m.recommended)!;
 export const qwenByKey = (key: string | null) => QWEN_MODELS.find((m) => m.key === key);
@@ -43,6 +43,28 @@ export function qwenSupport(): Promise<{ ok: boolean; f16: boolean }> {
     }
   })();
   return gpu;
+}
+
+const PHONE = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent);
+/**
+ * Memory beyond the model itself: the conversation window and the working space.
+ * Safari on iPhone caps each page's memory (whatever the phone's RAM) and reloads
+ * the page with "A problem repeatedly occurred" past it, so phones use much less.
+ * Auxilium's chats are short, so a smaller window costs nothing.
+ */
+const memOpts = (m: QwenModel) =>
+  PHONE ? { context_window_size: m.big ? 1024 : 1536, prefill_chunk_size: m.big ? 128 : 256 } : { context_window_size: 2048, prefill_chunk_size: 512 };
+
+/** Keep the newest messages that fit the conversation window (about 3 characters per token). */
+function fit(history: { role: 'user' | 'assistant'; content: string }[], system: string, m: QwenModel) {
+  let room = (memOpts(m).context_window_size - 400) * 3 - system.length;
+  const out: typeof history = [];
+  for (let i = history.length - 1; i >= 0 && out.length < 8; i--) {
+    room -= history[i].content.length;
+    if (room < 0 && out.length) break;
+    out.unshift(history[i]);
+  }
+  return out;
 }
 
 const idFor = async (m: QwenModel) => ((await qwenSupport()).f16 ? m.f16 : m.f32);
@@ -96,7 +118,7 @@ function call(msg: Record<string, unknown>, progress?: (p: number, text: string)
 export async function loadQwen(m: QwenModel, onProgress?: (p: number, text: string) => void): Promise<void> {
   const id = await idFor(m);
   if (loaded === id) return;
-  await call({ type: 'load', model: id }, onProgress);
+  await call({ type: 'load', model: id, opts: memOpts(m) }, onProgress);
   loaded = id;
 }
 
@@ -110,7 +132,7 @@ export async function removeQwen(m: QwenModel): Promise<void> {
 
 export async function qwenChat(m: QwenModel, system: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<string> {
   await loadQwen(m);
-  const text = await call({ type: 'chat', messages: [{ role: 'system', content: system }, ...history.slice(-8)] });
+  const text = await call({ type: 'chat', messages: [{ role: 'system', content: system }, ...fit(history, system, m)] });
   // Qwen3 can still wrap reasoning in <think> tags; keep only the answer.
   return text.replace(/<think>[\s\S]*?<\/think>/g, '').replace(/<\/?think>/g, '').replace(/\s*\[end\]\s*$/i, '').trim() || '…';
 }
