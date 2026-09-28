@@ -57,7 +57,7 @@ const LazyReference = lazyPage<{ tab?: string }>(
 );
 const LazyChallenges = lazyPage<StepProps>(() => import('./pages/Challenges').then((m) => m.Challenges), 'Loading challenges');
 const LazyAuxilium = lazyPage<object>(
-  () => Promise.all([import('./pages/Auxilium'), import('./lib/auxilium').then((m) => m.ready)]).then(([m]) => m.Auxilium),
+  () => import('./pages/Auxilium').then((m) => m.Auxilium),
   'Waking up Auxilium',
 );
 

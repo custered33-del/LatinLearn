@@ -266,3 +266,28 @@
   display: grid;
   gap: 4px;
 }
+
+.aux-setup {
+  margin-top: 8px;
+  border: 1.5px solid var(--accent);
+}
+.aux-required {
+  margin-left: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font: 700 12px var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.aux-setup .h-sm {
+  flex-wrap: wrap;
+}
+.aux-model-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}

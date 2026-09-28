@@ -37,12 +37,7 @@ LatinLearn is hosted free on **GitHub Pages**: every push to `main` runs the tes
 
 ## Auxilium, your practice buddy
 
-The chat button (bottom right) opens **Auxilium**. It works offline on any device:
-
-- "quiz me": questions on your weakest words that update your word strength and XP
-- "what does *amīcus* mean?", "how do you say happy?", "conjugate *videō*", "say 2026 in Latin"
-
-**Optional local AI:** on a PC with [Ollama](https://ollama.com) (for example `ollama pull qwen2.5:7b`), open questions go to the model running on that computer, which is free and private. For the online version, double-click **`Allow Auxilium AI.cmd`** once so Ollama accepts requests from the LatinLearn site.
+The chat button (bottom right) opens **Auxilium**, an AI practice buddy. It runs a Qwen model on the device itself with [WebLLM](https://github.com/mlc-ai/web-llm) (WebGPU), so it's free and private and works offline once downloaded. Auxilium asks you to download a model first: Qwen2.5 0.5B, Qwen3 0.6B, Qwen2.5 1.5B (recommended), Qwen3 4B or Qwen2.5 7B. The model files come from Hugging Face and stay in the browser until removed. Each question also passes the matching course words to the model, so small models don't invent vocabulary.
 
 ## Play it
 
