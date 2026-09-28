@@ -4,6 +4,7 @@ import { courseById, stepById } from './data/courses';
 import type { Course, CourseId, StepId } from './data/types';
 import { Footer, Header } from './components/Layout';
 import { Icon } from './components/Icon';
+import { PushPrompt } from './components/PushPrompt';
 import { Spinner } from './components/ui';
 import { useTitle } from './lib/hooks';
 import { compPhase, timeLeft, useFamily } from './lib/family';
@@ -184,6 +185,7 @@ export function App() {
         {page}
       </main>
       <Footer />
+      <PushPrompt />
       {/* Floating helper, hidden inside drills and games where it could cover buttons. */}
       {section !== 'auxilium' && section !== 'daily' && !step && (
         <a class="aux-fab" href={href('auxilium')} aria-label={`Ask Auxilium, your ${LANG.language} practice buddy`}>

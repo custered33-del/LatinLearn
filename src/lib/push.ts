@@ -14,6 +14,8 @@ import { currentStreak, readStored, subscribeProgress } from './progress';
 /** Public half of the signing key (the private half is only on the sender). */
 const VAPID_PUBLIC = 'BEBQdHryIgB-EGn9JAjVsybTDdLILkM1RQgpX6i0ROZgmSVcqhgYsBbFx9nBAJtOv85FdpZFbSOTAhGuUC_Afrc';
 const KEY = 'latinlearn:push';
+/** Set by "I don't want notifications" in Settings: stop asking when the app opens. */
+const OPT_OUT = 'latinlearn:push-optout';
 
 export interface PushPrefs {
   streak: boolean;
@@ -47,6 +49,23 @@ function setSaved(s: Saved | null) {
   listeners.forEach((fn) => fn());
 }
 
+export function pushOptedOut(): boolean {
+  try {
+    return localStorage.getItem(OPT_OUT) === '1';
+  } catch {
+    return false;
+  }
+}
+export function setPushOptOut(on: boolean): void {
+  try {
+    if (on) localStorage.setItem(OPT_OUT, '1');
+    else localStorage.removeItem(OPT_OUT);
+  } catch {
+    /* ignore */
+  }
+  listeners.forEach((fn) => fn());
+}
+
 const isIos = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const installed = () => matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;
 
@@ -56,6 +75,9 @@ export function pushSupport(): 'ok' | 'ios-install' | 'no' {
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return isIos() && !installed() ? 'ios-install' : 'no';
   return 'ok';
 }
+
+/** Should the app offer notifications when it opens? (Not if they're on, refused, or unwanted.) */
+export const shouldAskPush = () => !saved && !pushOptedOut() && pushSupport() === 'ok' && Notification.permission !== 'denied';
 
 const recordUrl = (id: string) => `${CLOUD_URL}/push/${id}.json`;
 const randomId = () => Array.from(crypto.getRandomValues(new Uint8Array(20)), (b) => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
@@ -101,6 +123,7 @@ export async function enablePush(prefs: PushPrefs = saved?.prefs ?? DEFAULT_PREF
   const sub = (await subscription()).toJSON();
   const id = saved?.id ?? randomId();
   await send(id, 'PUT', { sub: { endpoint: sub.endpoint, keys: sub.keys }, prefs, ...status() });
+  setPushOptOut(false);
   setSaved({ id, prefs });
   return 'ok';
 }
@@ -119,7 +142,7 @@ export async function setPushPrefs(prefs: PushPrefs): Promise<void> {
   setSaved({ ...saved, prefs });
 }
 
-export function usePush(): { on: boolean; prefs: PushPrefs } {
+export function usePush(): { on: boolean; prefs: PushPrefs; optedOut: boolean } {
   const [, force] = useReducer((n: number) => n + 1, 0);
   useEffect(() => {
     listeners.add(force as () => void);
@@ -127,7 +150,7 @@ export function usePush(): { on: boolean; prefs: PushPrefs } {
       listeners.delete(force as () => void);
     };
   }, []);
-  return { on: !!saved, prefs: saved?.prefs ?? DEFAULT_PREFS };
+  return { on: !!saved, prefs: saved?.prefs ?? DEFAULT_PREFS, optedOut: pushOptedOut() };
 }
 
 /** Keep the sender up to date (streak, last practice, time zone, push address). */

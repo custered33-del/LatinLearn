@@ -19,7 +19,7 @@ import {
   type FamilyData,
 } from '../lib/family';
 import { addFriend, formatFriendId, refreshBoard, refreshFriends, removeFriend, useFriends } from '../lib/friends';
-import { disablePush, enablePush, pushSupport, setPushPrefs, usePush, type PushPrefs } from '../lib/push';
+import { disablePush, enablePush, pushSupport, setPushOptOut, setPushPrefs, usePush, type PushPrefs } from '../lib/push';
 import { href } from '../router';
 import { LanguagePicker } from '../components/Layout';
 import { cx, useTitle } from '../lib/hooks';
@@ -723,7 +723,7 @@ const hourLabel = (h: number) => new Date(2000, 0, 1, h).toLocaleTimeString([], 
 
 /** Turn on notifications (streak saver, daily reminder, "we miss you"). */
 function NotificationsSection() {
-  const { on, prefs } = usePush();
+  const { on, prefs, optedOut } = usePush();
   const support = pushSupport();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -783,7 +783,13 @@ function NotificationsSection() {
             >
               <Icon name="sparkle" size={18} /> Turn on notifications
             </button>
+            {!optedOut && (
+              <button type="button" class="btn btn-ghost" onClick={() => setPushOptOut(true)}>
+                I don’t want notifications
+              </button>
+            )}
           </div>
+          {optedOut && <p class="muted small">Okay! {LANG.app} won’t ask again when it opens. You can still turn them on here any time.</p>}
         </>
       ) : (
         <>
