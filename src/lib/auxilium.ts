@@ -252,17 +252,41 @@ export function localReply(input: string): Reply | 'quiz' | 'progress' | null {
 }
 
 // ---------------------------------------------------------------------------
-// Optional local AI (Ollama)
+// Optional: Ollama on the learner's own PC (the built-in Qwen AI is in qwen.ts)
 // ---------------------------------------------------------------------------
 
 export const AI_URL = 'http://localhost:11434';
 
-const SYSTEM = `You are Auxilium, a friendly, encouraging ${LANGUAGE} tutor inside ${LANG.app}, an app for teenagers.
+export const AI_SYSTEM = `You are Auxilium, a friendly, encouraging ${LANGUAGE} tutor inside ${LANG.app}, an app for teenagers.
 Help the learner practise ${LATIN ? 'classical Latin' : `everyday ${LANGUAGE}`}. Keep every reply short (under 100 words).
 ${LATIN ? 'Always write Latin with macrons for long vowels (e.g. "Salvē, amīce!").' : `Always write ${LANGUAGE} with correct accents and spelling.`}
 If the learner writes ${LANGUAGE}, gently correct mistakes and explain in simple English.
 End with one short practice question in ${LANGUAGE} with its English translation in brackets.
 Keep everything suitable for a 13-year-old. If asked about something unrelated to ${LANGUAGE} or ${LANG.place}, bring it back to ${LANGUAGE} kindly.`;
+
+/**
+ * Small AI models invent words, so give them the right ones: course and Lexicon
+ * entries for words in the question (English or the language itself), as a note for the AI.
+ */
+const HINT_SKIP = new Set(
+  'how do does did can could would you me i say said tell help please in the a an is are was what which who to of and or it this that mean means word words write translate with for be'.split(' '),
+);
+export function aiHints(question: string): string {
+  const found = new Map<string, Word>();
+  const words = question
+    .replace(/["“”'‘’?!.,:;()]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 1 && !HINT_SKIP.has(w.toLowerCase()) && w.toLowerCase() !== LANGUAGE.toLowerCase());
+  for (let i = 0; i < words.length && found.size < 10; i++) {
+    const two = words.slice(i, i + 2).join(' ');
+    for (const w of [findLatin(words[i]), ...findEnglish(two).slice(0, 1), ...findEnglish(words[i]).slice(0, 2)]) if (w) found.set(w.head, w);
+  }
+  if (!found.size) return '';
+  return (
+    `\nCorrect ${LANGUAGE} words from the learner's course (use these exact forms, don't invent others):\n` +
+    [...found.values()].map((w) => `- ${w.la} = ${w.en}`).join('\n')
+  );
+}
 
 /** Installed chat models, or null if Ollama isn't reachable from this page. */
 export async function aiModels(): Promise<string[] | null> {
@@ -284,7 +308,7 @@ export async function aiChat(model: string, history: { role: 'user' | 'assistant
   const r = await fetch(`${AI_URL}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, stream: false, messages: [{ role: 'system', content: SYSTEM }, ...history.slice(-10)] }),
+    body: JSON.stringify({ model, stream: false, messages: [{ role: 'system', content: AI_SYSTEM }, ...history.slice(-10)] }),
     signal: AbortSignal.timeout(90_000),
   });
   if (!r.ok) throw new Error(`AI error ${r.status}`);

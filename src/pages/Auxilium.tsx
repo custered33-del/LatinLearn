@@ -3,6 +3,8 @@ import { Icon } from '../components/Icon';
 import { AudioButton, Rich } from '../components/ui';
 import { cx, useTitle } from '../lib/hooks';
 import {
+  AI_SYSTEM,
+  aiHints,
   START_CHIPS,
   WORDS,
   aiChat,
@@ -19,6 +21,7 @@ import { LANG, greeting } from '../lang';
 import { accountName } from '../lib/cloud';
 import { MASTERED } from '../lib/mastery';
 import { getProgress } from '../lib/progress';
+import { DEFAULT_QWEN, QWEN_MODELS, formatSize, isDownloaded, loadQwen, qwenByKey, qwenChat, qwenSupport, removeQwen, type QwenModel } from '../lib/qwen';
 import './auxilium.css';
 
 interface Msg extends Reply {
@@ -27,6 +30,23 @@ interface Msg extends Reply {
 }
 
 const AI_KEY = 'latinlearn:auxilium-ai';
+const QWEN_KEY = 'latinlearn:qwen-model';
+const OLLAMA_KEY = 'latinlearn:use-ollama';
+
+const store = (k: string, v: string) => {
+  try {
+    localStorage.setItem(k, v);
+  } catch {
+    /* ignore */
+  }
+};
+const read = (k: string) => {
+  try {
+    return localStorage.getItem(k);
+  } catch {
+    return null;
+  }
+};
 const IS_PHONE = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
 function progressReply(): Reply {
@@ -59,39 +79,78 @@ export function Auxilium() {
   const [busy, setBusy] = useState(false);
   const [models, setModels] = useState<string[] | null | undefined>(undefined);
   const [model, setModel] = useState<string | undefined>();
-  const [aiOn, setAiOn] = useState(() => {
-    try {
-      return localStorage.getItem(AI_KEY) !== 'off';
-    } catch {
-      return true;
-    }
-  });
+  const [aiOn, setAiOn] = useState(() => read(AI_KEY) !== 'off');
+  // Built-in AI: which Qwen model, which are downloaded, and download progress.
+  const [gpu, setGpu] = useState<{ ok: boolean; f16: boolean } | undefined>();
+  const [choice, setChoice] = useState<QwenModel>(() => qwenByKey(read(QWEN_KEY)) ?? DEFAULT_QWEN);
+  const [have, setHave] = useState<Record<string, boolean>>({});
+  const [prog, setProg] = useState<{ p: number; text: string } | null>(null);
+  const [aiError, setAiError] = useState('');
+  const [useOllama, setUseOllama] = useState(() => read(OLLAMA_KEY) === 'on');
   const bottom = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
 
-  const [checking, setChecking] = useState(false);
   const checkAi = async () => {
-    setChecking(true);
     const m = await aiModels();
     setModels(m);
     setModel(m?.length ? pickModel(m) : undefined);
-    setChecking(false);
   };
-  // The AI only ever runs on the learner's own computer, so phones don't look for it unless asked.
+  // Ollama only runs on a PC, so phones don't look for it; every device checks for WebGPU (Qwen).
   useEffect(() => {
     if (IS_PHONE) setModels(null);
     else void checkAi();
+    void qwenSupport().then(async (g) => {
+      setGpu(g);
+      if (!g.ok) return;
+      const found = await Promise.all(QWEN_MODELS.map(async (m) => [m.key, await isDownloaded(m)] as const));
+      setHave(Object.fromEntries(found));
+    });
   }, []);
+
+  const choose = (m: QwenModel) => {
+    setChoice(m);
+    setAiError('');
+    store(QWEN_KEY, m.key);
+  };
+  const download = async (m: QwenModel) => {
+    setAiError('');
+    setProg({ p: 0, text: 'Starting the download…' });
+    // Ask the browser to keep the model even when space runs low.
+    void navigator.storage?.persist?.().catch(() => undefined);
+    try {
+      await loadQwen(m, (p, text) => setProg({ p, text }));
+      setHave((h) => ({ ...h, [m.key]: true }));
+      toggleAi(true);
+    } catch (e) {
+      const msg = String((e as Error)?.message ?? e);
+      setAiError(
+        /memory|device lost|allocat/i.test(msg)
+          ? `${m.name} is too big for this device. Try a smaller model.`
+          : /quota|storage|space/i.test(msg)
+            ? 'Not enough free space on this device for that model.'
+            : 'The download stopped. Check your internet and try again (it carries on where it left off).',
+      );
+    }
+    setProg(null);
+  };
+  const remove = async (m: QwenModel) => {
+    if (!confirm(`Remove ${m.name} from this device? You can download it again any time.`)) return;
+    await removeQwen(m);
+    setHave((h) => ({ ...h, [m.key]: false }));
+  };
+  const pickOllama = (on: boolean) => {
+    setUseOllama(on);
+    store(OLLAMA_KEY, on ? 'on' : 'off');
+  };
   useEffect(() => bottom.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), [log.length, busy]);
 
-  const aiReady = !!(aiOn && model);
+  const ollamaReady = !!(useOllama && model);
+  const qwenReady = !!(aiOn && gpu?.ok && have[choice.key]);
+  const aiReady = ollamaReady || qwenReady;
+  const aiName = ollamaReady ? model : choice.name;
   const toggleAi = (on: boolean) => {
     setAiOn(on);
-    try {
-      localStorage.setItem(AI_KEY, on ? 'on' : 'off');
-    } catch {
-      /* ignore */
-    }
+    store(AI_KEY, on ? 'on' : 'off');
   };
 
   const add = (...msgs: Msg[]) => setLog((l) => [...l, ...msgs]);
@@ -141,10 +200,16 @@ export function Auxilium() {
         const history = [...log, me]
           .filter((m) => m.who === 'me' || m.ai)
           .map((m) => ({ role: m.who === 'me' ? ('user' as const) : ('assistant' as const), content: m.text }));
-        const answer = await aiChat(model!, history);
+        const answer = ollamaReady ? await aiChat(model!, history) : await qwenChat(choice, AI_SYSTEM + aiHints(text), history);
         add({ who: 'aux', text: answer, ai: true });
       } catch {
-        add({ who: 'aux', text: 'The local AI didn’t answer. Is Ollama still running? You can still use everything else here.', chips: START_CHIPS });
+        add({
+          who: 'aux',
+          text: ollamaReady
+            ? 'The AI on your PC didn’t answer. Is Ollama still running? You can still use everything else here.'
+            : `${choice.name} couldn’t answer on this device. Try a smaller model below. You can still use everything else here.`,
+          chips: START_CHIPS,
+        });
       } finally {
         setBusy(false);
         field.current?.focus();
@@ -155,7 +220,7 @@ export function Auxilium() {
       who: 'aux',
       text:
         'I didn’t understand that one. Try “what does _canis_ mean?”, “how do you say dog?”, “conjugate _videō_”, or “quiz me”.' +
-        (models === null ? ' (For open questions, connect a local AI on your PC: see below.)' : ''),
+        ' (For open questions, download the free Auxilium AI below.)',
       chips: START_CHIPS,
     });
   };
@@ -171,7 +236,7 @@ export function Auxilium() {
         <div>
           <p class="eyebrow">Your practice buddy</p>
           <h1>Auxilium</h1>
-          <p class="muted">Works offline on any device. {aiReady ? `Open questions go to the local AI (${model}).` : ''}</p>
+          <p class="muted">Works offline on any device. {aiReady ? `Open questions go to ${aiName}.` : ''}</p>
         </div>
       </header>
 
@@ -183,7 +248,7 @@ export function Auxilium() {
                 <Rich text={m.text} />
               </span>
               {m.say && <AudioButton text={m.say} size="sm" />}
-              {m.ai && <span class="aux-tag">local AI</span>}
+              {m.ai && <span class="aux-tag">AI</span>}
             </div>
           </div>
         ))}
@@ -243,47 +308,82 @@ export function Auxilium() {
 
       <section class="panel aux-ai">
         <h2 class="h-sm">
-          <Icon name="sparkle" size={18} /> Local AI (PC only, optional)
+          <Icon name="sparkle" size={18} /> Auxilium AI (Qwen)
         </h2>
         <p class="muted small">
-          {aiReady
-            ? `Using ${model} on this computer.`
-            : 'Not connected, so Auxilium uses its built-in tutor (works everywhere, even offline).'}
+          Chat freely about {LANG.language}. Pick a Qwen model and download it once: it runs right here on this device, free and private,
+          and works offline after that. Bigger models are smarter but need more space and a stronger device.
         </p>
-        <div class="btn-row">
-          <button type="button" class="btn btn-ghost btn-sm" onClick={() => void checkAi()} disabled={checking}>
-            <Icon name="refresh" size={14} /> {checking ? 'Checking…' : 'Check for local AI'}
-          </button>
-        </div>
-        {models === undefined ? (
-          <p class="muted">Looking for a local AI on this computer…</p>
-        ) : models && models.length ? (
-          <>
-            <label class="switch-row">
-              <input type="checkbox" checked={aiOn} onChange={(e) => toggleAi(e.currentTarget.checked)} />
-              <span class="switch" aria-hidden="true" />
-              <span>Answer open questions with the AI on this PC</span>
-            </label>
-            <label class="aux-model">
-              Model{' '}
-              <select value={model} onChange={(e) => setModel(e.currentTarget.value)}>
-                {models.map((m) => (
-                  <option key={m}>{m}</option>
-                ))}
-              </select>
-            </label>
-            <p class="muted small">It runs on your own computer through Ollama: free, private, nothing sent to the internet. The AI can make mistakes, so check anything important in the Lexicon.</p>
-          </>
-        ) : (
+        {gpu === undefined ? (
+          <p class="muted">Checking what this device can run…</p>
+        ) : !gpu.ok ? (
           <p class="muted small">
-            No local AI found{IS_PHONE ? ' (phones use the built-in tutor)' : ''}. To chat freely about {LANG.language} on your PC, install the free{' '}
-            <a href="https://ollama.com" target="_blank" rel="noreferrer">
-              Ollama
-            </a>{' '}
-            app, run <code>ollama pull qwen2.5:7b</code>, and (for the online version) double-click <b>Allow Auxilium AI.cmd</b> in the
-            LatinLearn folder once.
+            This browser can’t run the AI on this device (it needs WebGPU). Try the latest Chrome or Edge, or Safari on iOS 26 or newer.
+            {import.meta.env.MODE === 'play' ? ' The PC file can’t run it: open the online app instead.' : ''} Auxilium’s built-in tutor still
+            works here.
           </p>
+        ) : (
+          <>
+            <div class="qwen-list" role="radiogroup" aria-label="AI model">
+              {QWEN_MODELS.map((m) => (
+                <label key={m.key} class={cx('qwen-card', choice.key === m.key && 'on')}>
+                  <input type="radio" name="qwen" checked={choice.key === m.key} disabled={!!prog} onChange={() => choose(m)} />
+                  <span class="qwen-info">
+                    <span class="qwen-top">
+                      <b>{m.name}</b>
+                      {m.recommended && <span class="qwen-badge">Recommended</span>}
+                      <span class="qwen-size">{formatSize(m.mb)}</span>
+                    </span>
+                    <small class="muted">
+                      {m.note}
+                      {IS_PHONE && m.big ? ' Too big for most phones.' : ''}
+                    </small>
+                    {have[m.key] && <small class="qwen-have">✓ Downloaded</small>}
+                  </span>
+                </label>
+              ))}
+            </div>
+            {prog ? (
+              <div class="qwen-progress" aria-live="polite">
+                <div class="family-bar">
+                  <span style={{ width: `${Math.round(prog.p * 100)}%` }} />
+                </div>
+                <small class="muted">
+                  {Math.round(prog.p * 100)}% · {prog.text.replace(/\[.*?\]\s*/g, '').slice(0, 90)}
+                </small>
+                <small class="muted">Keep this page open until it finishes.</small>
+              </div>
+            ) : have[choice.key] ? (
+              <>
+                <label class="switch-row">
+                  <input type="checkbox" checked={aiOn} onChange={(e) => toggleAi(e.currentTarget.checked)} />
+                  <span class="switch" aria-hidden="true" />
+                  <span>Answer open questions with {choice.name}</span>
+                </label>
+                <div class="btn-row">
+                  <button type="button" class="btn btn-ghost btn-sm" disabled={busy} onClick={() => void remove(choice)}>
+                    <Icon name="trash" size={14} /> Remove download ({formatSize(choice.mb)})
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div class="btn-row">
+                <button type="button" class="btn btn-primary" onClick={() => void download(choice)}>
+                  <Icon name="download" size={18} /> Download {choice.name} ({formatSize(choice.mb)})
+                </button>
+              </div>
+            )}
+            {aiError && <p class="save-msg bad">{aiError}</p>}
+          </>
         )}
+        {models && models.length > 0 && (
+          <label class="switch-row">
+            <input type="checkbox" checked={useOllama} onChange={(e) => pickOllama(e.currentTarget.checked)} />
+            <span class="switch" aria-hidden="true" />
+            <span>Use Ollama on this PC instead ({model})</span>
+          </label>
+        )}
+        <p class="muted small">The AI can make mistakes, so check anything important in the Lexicon.</p>
       </section>
     </div>
   );
