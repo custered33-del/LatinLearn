@@ -291,3 +291,13 @@
   justify-content: space-between;
   gap: 8px;
 }
+
+.aux-load {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+.aux-load .qwen-progress {
+  width: 100%;
+}

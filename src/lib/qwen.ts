@@ -89,6 +89,9 @@ let worker: Worker | null = null;
 let nextId = 0;
 const pending = new Map<number, { ok: (v: string) => void; no: (e: Error) => void; progress?: (p: number, text: string) => void }>();
 let loaded: string | null = null;
+let loadedKey: string | null = null;
+/** The model that's in memory right now (key), if any. */
+export const loadedModel = () => loadedKey;
 
 function call(msg: Record<string, unknown>, progress?: (p: number, text: string) => void): Promise<string> {
   if (import.meta.env.MODE === 'play') return Promise.reject(new Error('not in the PC file'));
@@ -120,13 +123,14 @@ export async function loadQwen(m: QwenModel, onProgress?: (p: number, text: stri
   if (loaded === id) return;
   await call({ type: 'load', model: id, opts: memOpts(m) }, onProgress);
   loaded = id;
+  loadedKey = m.key;
 }
 
 /** Delete a downloaded model from this device. */
 export async function removeQwen(m: QwenModel): Promise<void> {
   for (const id of [m.f16, m.f32]) {
     await call({ type: 'delete', model: id }).catch(() => undefined);
-    if (loaded === id) loaded = null;
+    if (loaded === id) loaded = loadedKey = null;
   }
 }
 

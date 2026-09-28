@@ -5,7 +5,7 @@ import { cx, useTitle } from '../lib/hooks';
 import { AI_SYSTEM, START_CHIPS, aiHints } from '../lib/auxilium';
 import { LANG, greeting } from '../lang';
 import { accountName } from '../lib/cloud';
-import { DEFAULT_QWEN, QWEN_MODELS, formatSize, isDownloaded, loadQwen, qwenByKey, qwenChat, qwenSupport, removeQwen, type QwenModel } from '../lib/qwen';
+import { DEFAULT_QWEN, QWEN_MODELS, formatSize, isDownloaded, loadQwen, loadedModel, qwenByKey, qwenChat, qwenSupport, removeQwen, type QwenModel } from '../lib/qwen';
 import './auxilium.css';
 
 interface Msg {
@@ -117,6 +117,7 @@ export function Auxilium() {
   const [prog, setProg] = useState<{ p: number; text: string } | null>(null);
   const [error, setError] = useState('');
   const [showModels, setShowModels] = useState(false);
+  const [live, setLive] = useState(loadedModel());
   const bottom = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
 
@@ -145,6 +146,7 @@ export function Auxilium() {
     try {
       await loadQwen(m, (p, text) => setProg({ p, text }));
       setHave((h) => ({ ...h, [m.key]: true }));
+      setLive(loadedModel());
       choose(m);
       setShowModels(false);
     } catch (e) {
@@ -163,6 +165,19 @@ export function Auxilium() {
     if (!confirm(`Remove ${m.name} from this device? You can download it again any time.`)) return;
     await removeQwen(m);
     setHave((h) => ({ ...h, [m.key]: false }));
+    setLive(loadedModel());
+  };
+  /** Put the chosen model into memory (only when asked, so opening Auxilium never crashes). */
+  const load = async () => {
+    setError('');
+    setProg({ p: 0, text: 'Loading…' });
+    try {
+      await loadQwen(choice, (p, text) => setProg({ p, text }));
+    } catch {
+      setError(`${choice.name} couldn’t load on this device. It may be too big: try a smaller model.`);
+    }
+    setLive(loadedModel());
+    setProg(null);
   };
 
   const add = (...msgs: Msg[]) => setLog((l) => [...l, ...msgs]);
@@ -253,13 +268,31 @@ export function Auxilium() {
             <div ref={bottom} />
           </div>
 
-          {last?.chips && !busy && (
+          {last?.chips && !busy && live === choice.key && (
             <div class="aux-chips">
               {last.chips.map((c) => (
                 <button type="button" key={c} class="aux-chip" onClick={() => void send(c)}>
                   {c}
                 </button>
               ))}
+            </div>
+          )}
+
+          {live !== choice.key && (
+            <div class="aux-load">
+              {prog ? (
+                <div class="qwen-progress" aria-live="polite">
+                  <div class="family-bar">
+                    <span style={{ width: `${Math.round(prog.p * 100)}%` }} />
+                  </div>
+                  <small class="muted">Loading {choice.name}… {Math.round(prog.p * 100)}%</small>
+                </div>
+              ) : (
+                <button type="button" class="btn btn-primary" onClick={() => void load()}>
+                  <Icon name="play" size={18} /> Load {choice.name} to start chatting
+                </button>
+              )}
+              {error && <p class="save-msg bad">{error}</p>}
             </div>
           )}
 
@@ -280,7 +313,7 @@ export function Auxilium() {
               autoCapitalize="off"
               spellcheck={false}
             />
-            <button type="submit" class="btn btn-primary" disabled={!input.trim() || busy}>
+            <button type="submit" class="btn btn-primary" disabled={!input.trim() || busy || live !== choice.key}>
               <Icon name="arrow-right" size={18} />
               <span class="sr-only">Send</span>
             </button>
