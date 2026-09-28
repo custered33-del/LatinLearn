@@ -69,20 +69,27 @@ function fit(history: { role: 'user' | 'assistant'; content: string }[], system:
 
 const idFor = async (m: QwenModel) => ((await qwenSupport()).f16 ? m.f16 : m.f32);
 
-/** Is every piece of this model already in the browser's storage? (Checked without loading the AI engine.) */
-export async function isDownloaded(m: QwenModel): Promise<boolean> {
+// Which models finished downloading, kept in a tiny list. Checking the model files
+// themselves made Safari on iPhone read gigabytes into memory and crash the page.
+const HAVE_KEY = 'latinlearn:qwen-have';
+function haveList(): string[] {
   try {
-    const base = `https://huggingface.co/mlc-ai/${await idFor(m)}/resolve/main/`;
-    const cache = await caches.open('webllm/model');
-    const index = await cache.match(`${base}tensor-cache.json`);
-    if (!index) return false;
-    const { records } = (await index.json()) as { records: { dataPath: string }[] };
-    for (const r of records) if (!(await cache.match(new URL(r.dataPath, base).href))) return false;
-    return true;
+    return JSON.parse(localStorage.getItem(HAVE_KEY) ?? '[]') as string[];
   } catch {
-    return false;
+    return [];
   }
 }
+function setHave(key: string, on: boolean) {
+  try {
+    const next = haveList().filter((k) => k !== key);
+    if (on) next.push(key);
+    localStorage.setItem(HAVE_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
+}
+export const isDownloaded = async (m: QwenModel): Promise<boolean> => haveList().includes(m.key);
+export const downloadedCount = () => haveList().length;
 
 // The worker (and the 6 MB engine inside it) only starts when a model is downloaded, used or removed.
 let worker: Worker | null = null;
@@ -124,6 +131,7 @@ export async function loadQwen(m: QwenModel, onProgress?: (p: number, text: stri
   await call({ type: 'load', model: id, opts: memOpts(m) }, onProgress);
   loaded = id;
   loadedKey = m.key;
+  setHave(m.key, true);
 }
 
 /** Delete a downloaded model from this device. */
@@ -132,6 +140,7 @@ export async function removeQwen(m: QwenModel): Promise<void> {
     await call({ type: 'delete', model: id }).catch(() => undefined);
     if (loaded === id) loaded = loadedKey = null;
   }
+  setHave(m.key, false);
 }
 
 export async function qwenChat(m: QwenModel, system: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<string> {
@@ -139,4 +148,19 @@ export async function qwenChat(m: QwenModel, system: string, history: { role: 'u
   const text = await call({ type: 'chat', messages: [{ role: 'system', content: system }, ...fit(history, system, m)] });
   // Qwen3 can still wrap reasoning in <think> tags; keep only the answer.
   return text.replace(/<think>[\s\S]*?<\/think>/g, '').replace(/<\/?think>/g, '').replace(/\s*\[end\]\s*$/i, '').trim() || '…';
+}
+
+/** Delete every downloaded AI model from this device (whole caches, nothing is read first). */
+export async function deleteAllQwen(): Promise<void> {
+  worker?.terminate();
+  worker = null;
+  loaded = loadedKey = null;
+  for (const [, p] of pending) p.no(new Error('deleted'));
+  pending.clear();
+  try {
+    localStorage.removeItem(HAVE_KEY);
+  } catch {
+    /* ignore */
+  }
+  if (typeof caches !== 'undefined') for (const name of ['webllm/model', 'webllm/config', 'webllm/wasm']) await caches.delete(name).catch(() => false);
 }
