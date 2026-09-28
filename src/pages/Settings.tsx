@@ -18,6 +18,7 @@ import {
   useFamily,
   type FamilyData,
 } from '../lib/family';
+import { addFriend, formatFriendId, refreshBoard, refreshFriends, removeFriend, useFriends } from '../lib/friends';
 import { href } from '../router';
 import { LanguagePicker } from '../components/Layout';
 import { cx, useTitle } from '../lib/hooks';
@@ -440,6 +441,8 @@ export function Settings() {
       <div class="settings-grid">
         <CloudSection />
         <FamilySection />
+        <FriendsSection />
+        <LeaderboardSection />
         <VoiceSection />
         <SaveSection />
         <OfflineSection />
@@ -705,6 +708,163 @@ function FamilySection() {
         </>
       )}
       <div aria-live="polite">{msg && <p class={cx('save-msg', msg.ok ? 'good' : 'bad')}>{msg.text}</p>}</div>
+    </section>
+  );
+}
+
+/** Add friends by their 8-digit friend ID and see how they're doing. */
+function FriendsSection() {
+  const { account, myId, friends } = useFriends();
+  const { name } = useCloud();
+  const [input, setInput] = useState('');
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (myId) void refreshFriends().catch(() => setMsg({ ok: false, text: 'Couldn’t reach your friends. Check your internet.' }));
+  }, [myId]);
+
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      await fn();
+    } catch {
+      setMsg({ ok: false, text: 'Couldn’t reach the cloud. Check your internet and try again.' });
+    }
+    setBusy(false);
+  };
+
+  return (
+    <section class="panel settings-block family" aria-labelledby="friends-h">
+      <h2 id="friends-h" class="h-sm">
+        <Icon name="star" size={18} /> Friends
+      </h2>
+      {!account ? (
+        <p class="muted">
+          Friends are saved to your account, so first <b>create a login code</b> (or log in) in the box above. Then you get a friend ID to share.
+        </p>
+      ) : !myId ? (
+        <p class="muted">Getting your friend ID…</p>
+      ) : (
+        <>
+          <div class="friend-id">
+            <span>Your friend ID</span>
+            <b>{formatFriendId(myId)}</b>
+            <small class="muted">Share it so friends can add you. It’s not your login code.</small>
+          </div>
+          {!name && <p class="muted small">Add your name in the account box above so friends know it’s you.</p>}
+          <form
+            class="cloud-login"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void run(async () => {
+                const r = await addFriend(input);
+                setMsg(ADDED[r]);
+                if (r === 'ok') setInput('');
+              });
+            }}
+          >
+            <input
+              value={input}
+              onInput={(e) => setInput(e.currentTarget.value)}
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="Friend ID: 1234 5678"
+              aria-label="Friend ID"
+            />
+            <button type="submit" class="btn btn-ghost" disabled={busy || input.replace(/\D/g, '').length !== 8}>
+              Add
+            </button>
+          </form>
+          {!friends ? (
+            <p class="muted">Loading your friends…</p>
+          ) : friends.length === 0 ? (
+            <p class="muted">No friends yet. Add one with their friend ID!</p>
+          ) : (
+            <ul class="family-list">
+              {friends.map(([id, f], i) => (
+                <li key={id}>
+                  <span class="family-rank">{i + 1}</span>
+                  <span class="family-who">
+                    {f.name} <span aria-hidden="true">{f.langs}</span>
+                  </span>
+                  <span class="family-num" title="Streak">
+                    🔥 {f.streak}
+                  </span>
+                  <span class="family-num">{f.xp.toLocaleString()} XP</span>
+                  <button
+                    type="button"
+                    class="friend-remove"
+                    aria-label={`Remove ${f.name}`}
+                    title="Remove friend"
+                    onClick={() => {
+                      if (confirm(`Remove ${f.name} from your friends?`)) void run(() => removeFriend(id));
+                    }}
+                  >
+                    <Icon name="x" size={14} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div class="btn-row">
+            <button type="button" class="btn btn-ghost btn-sm" disabled={busy} onClick={() => void run(refreshFriends)}>
+              <Icon name="refresh" size={14} /> Refresh
+            </button>
+          </div>
+        </>
+      )}
+      <div aria-live="polite">{msg && <p class={cx('save-msg', msg.ok ? 'good' : 'bad')}>{msg.text}</p>}</div>
+    </section>
+  );
+}
+
+const ADDED = {
+  ok: { ok: true, text: 'Friend added! You can both see each other now.' },
+  wrong: { ok: false, text: 'Nobody has that friend ID. Check the 8 digits.' },
+  self: { ok: false, text: 'That’s your own friend ID!' },
+  already: { ok: false, text: 'You’re already friends.' },
+};
+
+const MEDALS = ['🥇', '🥈', '🥉'];
+
+/** The 10 learners with the most XP across the whole app. */
+function LeaderboardSection() {
+  const { myId, board } = useFriends();
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    void refreshBoard().catch(() => setError(true));
+  }, []);
+  return (
+    <section class="panel settings-block family" aria-labelledby="board-h">
+      <h2 id="board-h" class="h-sm">
+        <Icon name="trophy" size={18} /> Top 10 learners
+      </h2>
+      <p class="muted small">Everyone on LanguageLearn with an account, ranked by XP across all their languages.</p>
+      {error && !board ? (
+        <p class="muted">Couldn’t load the leaderboard. Check your internet.</p>
+      ) : !board ? (
+        <p class="muted">Loading the leaderboard…</p>
+      ) : board.length === 0 ? (
+        <p class="muted">Nobody’s on the board yet. Be the first!</p>
+      ) : (
+        <ol class="family-list">
+          {board.map(([id, p], i) => (
+            <li key={id} class={cx(id === myId && 'me')}>
+              <span class="family-rank">{MEDALS[i] ?? i + 1}</span>
+              <span class="family-who">
+                {p.name}
+                {id === myId && ' (you)'} <span aria-hidden="true">{p.langs}</span>
+              </span>
+              <span class="family-num" title="Streak">
+                🔥 {p.streak}
+              </span>
+              <span class="family-num">{p.xp.toLocaleString()} XP</span>
+            </li>
+          ))}
+        </ol>
+      )}
     </section>
   );
 }

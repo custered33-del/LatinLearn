@@ -10,6 +10,9 @@
         },
         "lang": {
           ".validate": "newData.isString() && newData.val().length <= 5"
+        },
+        "friendId": {
+          ".validate": "newData.isString() && newData.val().matches(/^[0-9]{8}$/)"
         }
       }
     },
@@ -42,6 +45,25 @@
             "$member": {
               ".validate": "$member.matches(/^[a-z0-9]{12}$/) && newData.isString() && newData.val().length <= 20"
             }
+          }
+        }
+      }
+    },
+    "profiles": {
+      ".read": "query.orderByChild === 'xp' && query.limitToLast <= 10",
+      ".indexOn": [
+        "xp"
+      ],
+      "$fid": {
+        ".read": "$fid.matches(/^[0-9]{8}$/)",
+        ".write": "$fid.matches(/^[0-9]{8}$/)",
+        ".validate": "newData.child('name').isString() && newData.child('name').val().length <= 20 && newData.child('xp').isNumber() && newData.child('xp').val() >= 0 && newData.child('xp').val() < 10000000 && newData.child('streak').isNumber()",
+        "langs": {
+          ".validate": "newData.isString() && newData.val().length <= 60"
+        },
+        "friends": {
+          "$other": {
+            ".validate": "$other.matches(/^[0-9]{8}$/) && newData.val() === true"
           }
         }
       }

@@ -96,7 +96,7 @@ async function get<T>(url: string): Promise<T | null> {
 }
 
 /** My stats across every language app on this device. */
-function myStats(name: string): Member {
+export function myStats(name: string): Member {
   let xp = 0;
   let streak = 0;
   let words = 0;

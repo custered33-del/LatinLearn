@@ -3568,6 +3568,40 @@ a.icon-btn {
   font-variant-numeric: tabular-nums;
 }
 
+/* Friends */
+.friend-id {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  text-align: center;
+}
+.friend-id span {
+  font-size: 13px;
+  font-weight: 600;
+}
+.friend-id b {
+  font: 700 28px/1.1 var(--font-display);
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+.friend-remove {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.friend-remove:hover {
+  background: var(--line-2);
+}
+
 /* Family speed battles */
 .battle-card {
   display: grid;

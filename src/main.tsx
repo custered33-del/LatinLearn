@@ -9,6 +9,7 @@ import { LANG_ID, applyLanguage } from './lang';
 import { loadVoice } from './lib/speech';
 import './lib/cloud';
 import './lib/family';
+import './lib/friends';
 
 applyLanguage();
 const root = document.getElementById('app')!;
