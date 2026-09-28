@@ -1,0 +1,41 @@
+# Every 15 minutes: send the streak saver, daily reminder and "we miss you"
+# notifications that are due (notify/send.mjs decides, using each device's own clock).
+# Signs in to Google without any stored key: GitHub proves it's this repo's main
+# branch and gets a short-lived token for the database-only notify-sender account.
+name: Send notifications
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: notify
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: notify
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/726221138088/locations/global/workloadIdentityPools/github/providers/latinlearn
+          service_account: notify-sender@latinlearn-custered33.iam.gserviceaccount.com
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/firebase.database,https://www.googleapis.com/auth/userinfo.email
+      - run: npm ci --prefix notify --no-fund --no-audit
+      - run: node notify/send.mjs
+        env:
+          FIREBASE_TOKEN: ${{ steps.auth.outputs.access_token }}
