@@ -20,7 +20,6 @@ import {
 } from '../lib/family';
 import { addFriend, formatFriendId, refreshBoard, refreshFriends, removeFriend, useFriends } from '../lib/friends';
 import { disablePush, enablePush, pushSupport, setPushOptOut, setPushPrefs, usePush, type PushPrefs } from '../lib/push';
-import { deleteAllQwen, downloadedCount } from '../lib/qwen';
 import { href } from '../router';
 import { LanguagePicker } from '../components/Layout';
 import { cx, useTitle } from '../lib/hooks';
@@ -394,38 +393,6 @@ function SaveSection() {
   );
 }
 
-/** Free the space used by Auxilium's AI models (and stop any of them loading). */
-function AiModelsSection() {
-  const [count, setCount] = useState(downloadedCount);
-  const [msg, setMsg] = useState('');
-  return (
-    <section class="panel settings-block" aria-labelledby="ai-h">
-      <h2 id="ai-h" class="h-sm">
-        <Icon name="trash" size={18} /> Auxilium AI models
-      </h2>
-      <p class="muted">
-        {count ? `${count} AI model${count === 1 ? '' : 's'} downloaded on this device.` : 'AI models you download in Auxilium are stored on this device.'} Deleting
-        them frees the space; you can download one again in Auxilium any time.
-      </p>
-      <div class="btn-row">
-        <button
-          type="button"
-          class="btn btn-ghost"
-          onClick={async () => {
-            if (!confirm('Delete all AI models from this device?')) return;
-            await deleteAllQwen();
-            setCount(0);
-            setMsg('All AI models deleted.');
-          }}
-        >
-          <Icon name="trash" size={16} /> Delete all AI models
-        </button>
-      </div>
-      {msg && <p class="save-msg good">{msg}</p>}
-    </section>
-  );
-}
-
 function OfflineSection() {
   const [state, setState] = useState<string | null>(null);
   const installed = typeof navigator !== 'undefined' && !!navigator.serviceWorker?.controller;
@@ -481,7 +448,6 @@ export function Settings() {
         <VoiceSection />
         <SaveSection />
         <OfflineSection />
-        <AiModelsSection />
       </div>
       <SwitchLanguage />
     </div>

@@ -12,6 +12,17 @@ import './lib/family';
 import './lib/friends';
 import './lib/push';
 
+// Auxilium's downloadable AI was removed: delete any models still stored on this device.
+try {
+  if (localStorage.getItem('latinlearn:qwen-have') !== null || localStorage.getItem('latinlearn:qwen-model') !== null) {
+    localStorage.removeItem('latinlearn:qwen-have');
+    localStorage.removeItem('latinlearn:qwen-model');
+  }
+} catch {
+  /* ignore */
+}
+if (typeof caches !== 'undefined') for (const name of ['webllm/model', 'webllm/config', 'webllm/wasm']) void caches.delete(name).catch(() => false);
+
 applyLanguage();
 const root = document.getElementById('app')!;
 // First run: pick a language (or log in); on an iPhone browser, then add that app to the Home Screen.
