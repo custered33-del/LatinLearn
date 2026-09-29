@@ -145,7 +145,8 @@
     "school": {
       "a": {
         "$code": {
-          ".read": "$code.matches(/^[0-9]{15}$/)"
+          ".read": "$code.matches(/^[0-9]{15}$/)",
+          ".write": "!newData.exists() && $code.matches(/^[0-9]{15}$/)"
         }
       },
       "s": {
@@ -162,7 +163,8 @@
           },
           "homework": {
             ".write": "root.child('school/s/' + $key + '/info').exists()"
-          }
+          },
+          ".write": "!newData.exists() && $key.matches(/^[A-Za-z0-9]{32}$/) && data.child('info').exists()"
         }
       },
       "l": {
