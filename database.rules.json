@@ -142,6 +142,59 @@
         }
       }
     },
+    "school": {
+      "a": {
+        "$code": {
+          ".read": "$code.matches(/^[0-9]{15}$/)"
+        }
+      },
+      "s": {
+        "$key": {
+          ".read": "$key.matches(/^[A-Za-z0-9]{32}$/) && data.child('info').exists()",
+          "teachers": {
+            ".write": "root.child('school/s/' + $key + '/info').exists()"
+          },
+          "classes": {
+            ".write": "root.child('school/s/' + $key + '/info').exists()"
+          },
+          "students": {
+            ".write": "root.child('school/s/' + $key + '/info').exists()"
+          },
+          "homework": {
+            ".write": "root.child('school/s/' + $key + '/info').exists()"
+          }
+        }
+      },
+      "l": {
+        "$u": {
+          "$h": {
+            ".read": "$h.matches(/^[0-9a-f]{64}$/)",
+            ".write": "$u.matches(/^[a-z0-9]{3,40}$/) && $h.matches(/^[0-9a-f]{64}$/)",
+            ".validate": "newData.child('role').isString() && newData.child('key').isString() && newData.child('key').val().length === 32"
+          }
+        }
+      },
+      "q": {
+        "$t": {
+          ".read": "$t.matches(/^[A-Za-z0-9]{32}$/)",
+          ".write": "$t.matches(/^[A-Za-z0-9]{32}$/)",
+          ".validate": "newData.child('role').val() === 'student' && newData.child('key').isString()"
+        }
+      },
+      "p": {
+        "$k": {
+          ".read": "$k.matches(/^[A-Za-z0-9]{32}$/)",
+          ".write": "$k.matches(/^[A-Za-z0-9]{32}$/)"
+        }
+      },
+      "u": {
+        "$u": {
+          ".read": true,
+          ".write": "!data.exists() && $u.matches(/^[a-z0-9]{3,40}$/)",
+          ".validate": "newData.val() === true"
+        }
+      }
+    },
     "status": {
       ".read": true
     }
