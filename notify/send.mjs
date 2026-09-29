@@ -13,7 +13,7 @@ import webpush from 'web-push';
 import { pick } from './pick.mjs';
 
 const DB = 'https://latinlearn-custered33-default-rtdb.europe-west1.firebasedatabase.app';
-const SITE = 'https://custered33-del.github.io/LatinLearn/';
+const SITE = 'https://languagelearn-app.vercel.app/';
 const test = process.argv.includes('--test');
 
 async function accessToken() {

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>LanguageLearn has moved</title>
+    <meta name="theme-color" content="#1a1030" />
+    <link rel="icon" href="favicon.svg" />
+    <style>
+      :root {
+        --bg: #f6f3fb;
+        --card: #ffffff;
+        --ink: #1d1530;
+        --muted: #62597a;
+        --accent: #7c4dff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #120c1f;
+          --card: #1d1530;
+          --ink: #f3eefc;
+          --muted: #b3a8cc;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        background: radial-gradient(circle at 30% 20%, rgba(124, 77, 255, 0.25), transparent 60%), var(--bg);
+        color: var(--ink);
+        font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      main {
+        width: min(440px, 100%);
+        padding: 28px 24px;
+        border-radius: 22px;
+        background: var(--card);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+        text-align: center;
+      }
+      h1 { margin: 8px 0; font-size: 26px; }
+      p { margin: 8px 0; color: var(--muted); }
+      .link { font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+      .code {
+        margin: 14px 0 4px;
+        padding: 12px;
+        border-radius: 14px;
+        background: rgba(124, 77, 255, 0.12);
+        font: 700 26px/1.2 ui-monospace, monospace;
+        letter-spacing: 0.08em;
+      }
+      .go {
+        display: inline-block;
+        margin-top: 16px;
+        padding: 14px 26px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      [hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div style="font-size: 44px" aria-hidden="true">🚚</div>
+      <h1>LanguageLearn has moved!</h1>
+      <p>Its new home is <span class="link">languagelearn-app.vercel.app</span></p>
+      <div id="has-code" hidden>
+        <p>Log in there with your code to get all your progress back:</p>
+        <div class="code" id="code"></div>
+        <p>Write it down or take a screenshot first.</p>
+      </div>
+      <p id="no-code" hidden>On your iPhone, add the new one to your Home Screen (Share, then Add to Home Screen).</p>
+      <a class="go" id="go" href="https://languagelearn-app.vercel.app/">Open LanguageLearn</a>
+    </main>
+    <script>
+      // The old address (GitHub Pages) now only points to the new one. Show the login code saved on
+      // this device so progress can be picked up there, and remove the old offline copy.
+      var NEW = 'https://languagelearn-app.vercel.app/';
+      var go = document.getElementById('go');
+      var lang = null;
+      var code = null;
+      try {
+        code = localStorage.getItem('latinlearn:cloud-code');
+        lang = localStorage.getItem('latinlearn:lang');
+      } catch (e) {}
+      go.href = NEW + (lang ? '?lang=' + encodeURIComponent(lang) : '') + location.hash;
+      if (code && /^\d{10}$/.test(code)) {
+        document.getElementById('code').textContent = code.slice(0, 3) + ' ' + code.slice(3, 6) + ' ' + code.slice(6);
+        document.getElementById('has-code').hidden = false;
+      } else {
+        document.getElementById('no-code').hidden = false;
+        // Nothing to write down: go straight there.
+        setTimeout(function () {
+          location.replace(go.href);
+        }, 2500);
+      }
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (r) {
+            r.unregister();
+          });
+        });
+      }
+      if (window.caches) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) {
+            caches.delete(k);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

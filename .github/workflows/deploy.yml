@@ -1,4 +1,5 @@
-# Every push to main tests, builds and publishes LatinLearn to GitHub Pages.
+# Every push to main runs the tests and publishes the old GitHub Pages address,
+# which now just forwards people to the app's new home on Vercel.
 name: Deploy to GitHub Pages
 
 on:
@@ -29,11 +30,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      # Voice clips are committed (recording needs the voice model), so this is the web build only.
-      - run: npm run build:web
+      # The app itself now lives on Vercel (https://languagelearn-app.vercel.app, see vercel.json).
+      # This old address only shows a "LanguageLearn has moved" page (moved/) that points there.
+      - run: mkdir site && cp moved/* site/ && cp public/favicon.svg site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
       - id: deployment
         uses: actions/deploy-pages@v4
