@@ -143,6 +143,12 @@
       }
     },
     "school": {
+      "n": {
+        ".read": true,
+        "$pub": {
+          ".write": "newData.child('gone').isString() && newData.child('gone').val().matches(/^[A-Za-z0-9]{32}$/) && root.child('school/s/' + newData.child('gone').val() + '/info/pub').val() === $pub && !newData.parent().parent().child('s').child(newData.child('gone').val()).exists()"
+        }
+      },
       "a": {
         "$code": {
           ".read": "$code.matches(/^[0-9]{15}$/)",
@@ -162,6 +168,12 @@
             ".write": "root.child('school/s/' + $key + '/info').exists()"
           },
           "homework": {
+            ".write": "root.child('school/s/' + $key + '/info').exists()"
+          },
+          "saves": {
+            ".write": "root.child('school/s/' + $key + '/info').exists()"
+          },
+          "compliance": {
             ".write": "root.child('school/s/' + $key + '/info').exists()"
           },
           ".write": "!newData.exists() && $key.matches(/^[A-Za-z0-9]{32}$/) && data.child('info').exists()"
@@ -192,7 +204,7 @@
       "u": {
         "$u": {
           ".read": true,
-          ".write": "!data.exists() && $u.matches(/^[a-z0-9]{3,40}$/)",
+          ".write": "(!data.exists() && $u.matches(/^[a-z0-9]{3,40}$/)) || (!newData.exists() && !newData.parent().parent().child('l').child($u).exists())",
           ".validate": "newData.val() === true"
         }
       }
