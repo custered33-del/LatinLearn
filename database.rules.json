@@ -176,6 +176,9 @@
           "compliance": {
             ".write": "root.child('school/s/' + $key + '/info').exists()"
           },
+          "settings": {
+            ".write": "root.child('school/s/' + $key + '/info').exists()"
+          },
           ".write": "!newData.exists() && $key.matches(/^[A-Za-z0-9]{32}$/) && data.child('info').exists()"
         }
       },
